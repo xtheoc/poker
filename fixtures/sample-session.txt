@@ -1,0 +1,203 @@
+PokerStars Hand #900000001:  Hold'em No Limit ($0.01/$0.02 USD) - 2026/09/04 19:00:00 ET
+Table 'Testina' 6-max Seat #1 is the button
+Seat 1: Villain1 ($2 in chips)
+Seat 2: Villain2 ($2 in chips)
+Seat 3: Villain3 ($2 in chips)
+Seat 4: Villain4 ($2 in chips)
+Seat 5: Villain5 ($2 in chips)
+Seat 6: Hero ($2 in chips)
+Villain2: posts small blind $0.01
+Villain3: posts big blind $0.02
+*** HOLE CARDS ***
+Dealt to Hero [Kd 3s]
+Villain4: folds
+Villain5: folds
+Hero: raises $0.03 to $0.05
+Villain1: folds
+Villain2: folds
+Villain3: folds
+Uncalled bet ($0.03) returned to Hero
+Hero collected $0.05 from pot
+*** SUMMARY ***
+Total pot $0.05 | Rake $0
+Seat 6: Hero collected ($0.05)
+
+PokerStars Hand #900000002:  Hold'em No Limit ($0.01/$0.02 USD) - 2026/09/04 19:08:00 ET
+Table 'Testina' 6-max Seat #1 is the button
+Seat 1: Villain1 ($2 in chips)
+Seat 2: Villain2 ($2 in chips)
+Seat 3: Villain3 ($2 in chips)
+Seat 4: Villain4 ($2 in chips)
+Seat 5: Villain5 ($2 in chips)
+Seat 6: Hero ($2 in chips)
+Villain2: posts small blind $0.01
+Villain3: posts big blind $0.02
+*** HOLE CARDS ***
+Dealt to Hero [Jc 8d]
+Villain4: folds
+Villain5: folds
+Hero: raises $0.03 to $0.05
+Villain1: calls $0.05
+Villain2: folds
+Villain3: folds
+*** FLOP *** [2c 7d Qs]
+Hero: bets $0.06
+Villain1: folds
+Uncalled bet ($0.06) returned to Hero
+Hero collected $0.11 from pot
+*** SUMMARY ***
+Total pot $0.11 | Rake $0
+Board [2c 7d Qs]
+Seat 6: Hero collected ($0.11)
+
+PokerStars Hand #900000003:  Hold'em No Limit ($0.01/$0.02 USD) - 2026/09/04 19:14:00 ET
+Table 'Testina' 6-max Seat #1 is the button
+Seat 1: Villain1 ($2 in chips)
+Seat 2: Villain2 ($2 in chips)
+Seat 3: Hero ($2 in chips)
+Seat 4: Villain4 ($2 in chips)
+Seat 5: Villain5 ($2 in chips)
+Seat 6: Villain6 ($2 in chips)
+Villain2: posts small blind $0.01
+Hero: posts big blind $0.02
+*** HOLE CARDS ***
+Dealt to Hero [Qh 9c]
+Villain4: folds
+Villain5: folds
+Villain6: folds
+Villain1: raises $0.03 to $0.05
+Villain2: folds
+Hero: folds
+Uncalled bet ($0.03) returned to Villain1
+Villain1 collected $0.05 from pot
+*** SUMMARY ***
+Total pot $0.05 | Rake $0
+Seat 1: Villain1 collected ($0.05)
+
+PokerStars Hand #900000004:  Hold'em No Limit ($0.01/$0.02 USD) - 2026/09/04 19:21:00 ET
+Table 'Testina' 6-max Seat #1 is the button
+Seat 1: Villain1 ($2 in chips)
+Seat 2: Villain2 ($2 in chips)
+Seat 3: Villain3 ($2 in chips)
+Seat 4: Villain4 ($2 in chips)
+Seat 5: Villain5 ($2 in chips)
+Seat 6: Hero ($2 in chips)
+Villain2: posts small blind $0.01
+Villain3: posts big blind $0.02
+*** HOLE CARDS ***
+Dealt to Hero [Ad 9h]
+Villain4: folds
+Villain5: folds
+Hero: raises $0.03 to $0.05
+Villain1: folds
+Villain2: folds
+Villain3: folds
+Uncalled bet ($0.03) returned to Hero
+Hero collected $0.05 from pot
+*** SUMMARY ***
+Total pot $0.05 | Rake $0
+Seat 6: Hero collected ($0.05)
+
+PokerStars Hand #900000005:  Hold'em No Limit ($0.01/$0.02 USD) - 2026/09/05 20:00:00 ET
+Table 'Testina' 6-max Seat #1 is the button
+Seat 1: Villain1 ($2 in chips)
+Seat 2: Villain2 ($2 in chips)
+Seat 3: Villain3 ($2 in chips)
+Seat 4: Villain4 ($2 in chips)
+Seat 5: Villain5 ($2 in chips)
+Seat 6: Hero ($2 in chips)
+Villain2: posts small blind $0.01
+Villain3: posts big blind $0.02
+*** HOLE CARDS ***
+Dealt to Hero [Th 7c]
+Villain4: folds
+Villain5: folds
+Hero: raises $0.03 to $0.05
+Villain1: raises $0.11 to $0.16
+Villain2: folds
+Villain3: folds
+Hero: folds
+Uncalled bet ($0.11) returned to Villain1
+Villain1 collected $0.13 from pot
+*** SUMMARY ***
+Total pot $0.13 | Rake $0
+Seat 1: Villain1 collected ($0.13)
+
+PokerStars Hand #900000006:  Hold'em No Limit ($0.01/$0.02 USD) - 2026/09/05 20:07:00 ET
+Table 'Testina' 6-max Seat #1 is the button
+Seat 1: Villain1 ($2 in chips)
+Seat 2: Villain2 ($2 in chips)
+Seat 3: Hero ($2 in chips)
+Seat 4: Villain4 ($2 in chips)
+Seat 5: Villain5 ($2 in chips)
+Seat 6: Villain6 ($2 in chips)
+Villain2: posts small blind $0.01
+Hero: posts big blind $0.02
+*** HOLE CARDS ***
+Dealt to Hero [Kc 9d]
+Villain4: folds
+Villain5: folds
+Villain6: folds
+Villain1: raises $0.03 to $0.05
+Villain2: folds
+Hero: folds
+Uncalled bet ($0.03) returned to Villain1
+Villain1 collected $0.05 from pot
+*** SUMMARY ***
+Total pot $0.05 | Rake $0
+Seat 1: Villain1 collected ($0.05)
+
+PokerStars Hand #900000007:  Hold'em No Limit ($0.01/$0.02 USD) - 2026/09/05 20:13:00 ET
+Table 'Testina' 6-max Seat #1 is the button
+Seat 1: Villain1 ($2 in chips)
+Seat 2: Villain2 ($2 in chips)
+Seat 3: Hero ($2 in chips)
+Seat 4: Villain4 ($2 in chips)
+Seat 5: Villain5 ($2 in chips)
+Seat 6: Villain6 ($2 in chips)
+Villain2: posts small blind $0.01
+Hero: posts big blind $0.02
+*** HOLE CARDS ***
+Dealt to Hero [Jd 9s]
+Villain4: folds
+Villain5: folds
+Villain6: folds
+Villain1: raises $0.03 to $0.05
+Villain2: folds
+Hero: folds
+Uncalled bet ($0.03) returned to Villain1
+Villain1 collected $0.05 from pot
+*** SUMMARY ***
+Total pot $0.05 | Rake $0
+Seat 1: Villain1 collected ($0.05)
+
+PokerStars Hand #900000008:  Hold'em No Limit ($0.01/$0.02 USD) - 2026/09/05 20:20:00 ET
+Table 'Testina' 6-max Seat #1 is the button
+Seat 1: Villain1 ($2 in chips)
+Seat 2: Villain2 ($2 in chips)
+Seat 3: Villain3 ($2 in chips)
+Seat 4: Hero ($2 in chips)
+Seat 5: Villain5 ($2 in chips)
+Seat 6: Villain6 ($2 in chips)
+Villain2: posts small blind $0.01
+Villain3: posts big blind $0.02
+*** HOLE CARDS ***
+Dealt to Hero [As Jc]
+Hero: raises $0.03 to $0.05
+Villain5: folds
+Villain6: folds
+Villain1: calls $0.05
+Villain2: folds
+Villain3: folds
+*** FLOP *** [Ac 8d 3h]
+Hero: bets $0.07
+Villain1: calls $0.07
+*** TURN *** [Ac 8d 3h] [2s]
+Hero: bets $0.18
+Villain1: folds
+Uncalled bet ($0.18) returned to Hero
+Hero collected $0.27 from pot
+*** SUMMARY ***
+Total pot $0.28 | Rake $0.01
+Board [Ac 8d 3h 2s]
+Seat 4: Hero collected ($0.27)
