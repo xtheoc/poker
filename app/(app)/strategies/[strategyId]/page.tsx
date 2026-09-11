@@ -28,6 +28,8 @@ export default async function StrategyPage({
   const setupDone = requiredSetup.filter((item) => progress.completeSetupIds.includes(item.id)).length;
   const setupReady = setupDone === requiredSetup.length;
   const continuing = next ?? null;
+  const preflop = map.slice(0, 7);
+  const postflop = map.slice(7);
   const session = await optionalUser();
   let review: StrategyReviewSummary | null = null;
   let reviewMigrationMissing = false;
@@ -50,11 +52,11 @@ export default async function StrategyPage({
   return (
     <main className="mx-auto w-full max-w-5xl px-5 py-8 sm:px-8 sm:py-10">
       <StrategyNav strategyId={strategy.id} strategyName={strategy.name} />
-      <div className="mt-10 max-w-3xl">
-        <p className="text-xs font-medium uppercase tracking-[0.14em] text-zinc-500">Strategy</p>
-        <h1 className="mt-2 text-4xl font-semibold tracking-tight sm:text-5xl">{strategy.name}</h1>
-        <p className="mt-3 text-base text-zinc-500 dark:text-zinc-400">{strategy.tagline}</p>
-      </div>
+      <header className="mt-10 border-b border-zinc-200 pb-8 dark:border-zinc-800">
+        <p className="font-mono text-[10px] font-medium uppercase tracking-[0.16em] text-zinc-500">Active strategy</p>
+        <h1 className="mt-3 text-4xl font-semibold tracking-tight sm:text-5xl">{strategy.name}</h1>
+        <p className="mt-3 text-sm text-zinc-500 dark:text-zinc-400">{strategy.tagline}</p>
+      </header>
 
       {migrationMissing && (
         <div className="mt-8 max-w-2xl">
@@ -73,10 +75,11 @@ export default async function StrategyPage({
         </div>
       )}
 
-      <section className="mt-12 border-y border-zinc-200 py-6 dark:border-zinc-800">
-        <p className="text-xs font-medium uppercase tracking-[0.14em] text-zinc-500">Continue</p>
-        <div className="mt-3 flex flex-col justify-between gap-5 sm:flex-row sm:items-end">
-          <div>
+      <section className="grid border-b border-zinc-200 dark:border-zinc-800 lg:grid-cols-[1.25fr_0.75fr]">
+        <div className="py-8 lg:pr-10">
+          <p className="font-mono text-[10px] font-medium uppercase tracking-[0.16em] text-zinc-500">Next</p>
+          <div className="mt-4 flex flex-col justify-between gap-6 sm:flex-row sm:items-end">
+            <div>
             <h2 className="text-2xl font-semibold tracking-tight">
               {!setupReady
                 ? "Finish setup"
@@ -84,37 +87,46 @@ export default async function StrategyPage({
                   ? continuing.lesson.title
                   : "Preflop complete"}
             </h2>
-            <p className="mt-1 text-sm text-zinc-500 dark:text-zinc-400">
+              <p className="mt-2 max-w-xl text-sm leading-6 text-zinc-500 dark:text-zinc-400">
               {!setupReady
                 ? "Confirm the required study setup to open the first lesson."
                 : continuing
                   ? continuing.lesson.summary
                   : "Your learned rules are ready in the playbook."}
             </p>
+            </div>
+            <Link
+              href={`/strategies/${strategy.id}/${
+                !setupReady ? "setup" : continuing ? "learn" : "playbook"
+              }${continuing ? `/${continuing.lesson.id}` : ""}`}
+              className="inline-flex shrink-0 items-center gap-2 rounded-md bg-zinc-900 px-4 py-2.5 text-sm font-medium text-white transition hover:bg-zinc-700 dark:bg-white dark:text-zinc-900 dark:hover:bg-zinc-200"
+            >
+              {!setupReady ? "Open setup" : continuing ? "Open lesson" : "Open playbook"}
+              <ArrowRight className="size-4" aria-hidden="true" />
+            </Link>
           </div>
-          <Link
-            href={`/strategies/${strategy.id}/${
-              !setupReady ? "setup" : continuing ? "learn" : "playbook"
-            }${continuing ? `/${continuing.lesson.id}` : ""}`}
-            className="inline-flex shrink-0 items-center gap-2 text-sm font-medium underline underline-offset-4"
-          >
-            {!setupReady ? "Open setup" : continuing ? "Open lesson" : "Open playbook"}
-            <ArrowRight className="size-4" aria-hidden="true" />
-          </Link>
+        </div>
+        <div className="border-t border-zinc-200 py-8 lg:border-t-0 lg:border-l lg:pl-10 dark:border-zinc-800">
+          <p className="font-mono text-[10px] font-medium uppercase tracking-[0.16em] text-zinc-500">Path</p>
+          <div className="mt-5 space-y-4">
+            <Path label="Pre-flop" done={preflop.filter((item) => item.state === "mastered").length} total={preflop.length} />
+            <Path label="Post-flop" done={postflop.filter((item) => item.state === "mastered").length} total={postflop.length} />
+          </div>
         </div>
       </section>
 
-      <section className="mt-10 grid divide-y divide-zinc-200 border-y border-zinc-200 sm:grid-cols-4 sm:divide-x sm:divide-y-0 dark:divide-zinc-800 dark:border-zinc-800">
-        <Metric label="Hands" value={review ? String(review.hands) : "—"} />
-        <Metric
-          label="Net bb"
-          value={review ? `${review.netBb >= 0 ? "+" : ""}${review.netBb.toFixed(1)}` : "—"}
-        />
-        <Metric label="VPIP" value={review?.vpip === null || !review ? "—" : `${review.vpip.toFixed(1)}%`} />
-        <Metric label="PFR" value={review?.pfr === null || !review ? "—" : `${review.pfr.toFixed(1)}%`} />
-      </section>
+      {review && (
+        <section className="grid divide-y divide-zinc-200 border-b border-zinc-200 sm:grid-cols-4 sm:divide-x sm:divide-y-0 dark:divide-zinc-800 dark:border-zinc-800">
+          <Metric label="Hands" value={String(review.hands)} />
+          <Metric label="Net" value={`${review.netBb >= 0 ? "+" : ""}${review.netBb.toFixed(1)}bb`} />
+          <Metric label="VPIP" value={review.vpip === null ? "—" : `${review.vpip.toFixed(1)}%`} />
+          <Metric label="PFR" value={review.pfr === null ? "—" : `${review.pfr.toFixed(1)}%`} />
+        </section>
+      )}
 
-      <div className="mt-10 grid gap-px border border-zinc-200 bg-zinc-200 sm:grid-cols-2 dark:border-zinc-800 dark:bg-zinc-800">
+      <section className="mt-10">
+        <p className="font-mono text-[10px] font-medium uppercase tracking-[0.16em] text-zinc-500">Workspace</p>
+      <div className="mt-4 grid gap-px border border-zinc-200 bg-zinc-200 sm:grid-cols-2 dark:border-zinc-800 dark:bg-zinc-800">
         <Link href={`/strategies/${strategy.id}/learn`} className="group bg-white p-6 transition hover:bg-zinc-50 dark:bg-zinc-950 dark:hover:bg-zinc-900">
           <BookOpen className="size-4 text-zinc-400" aria-hidden="true" />
           <p className="mt-9 text-lg font-semibold">Learn</p>
@@ -136,21 +148,23 @@ export default async function StrategyPage({
           <p className="mt-1 text-sm text-zinc-500 dark:text-zinc-400">Review only hands that belong to this strategy.</p>
         </Link>
       </div>
-
-      <div className="mt-14 flex flex-wrap items-baseline justify-between gap-3 border-b border-zinc-200 pb-4 dark:border-zinc-800">
-        <h2 className="text-lg font-semibold">Course progress</h2>
-        <p className="text-sm text-zinc-500">Setup {setupDone}/{requiredSetup.length} · {map.filter((item) => item.state === "mastered").length}/{map.length}</p>
-      </div>
-      <ol className="divide-y divide-zinc-200 dark:divide-zinc-800">
-        {map.map((item, index) => (
-          <li key={item.lesson.id} className="flex items-center gap-4 py-4">
-            <span className="flex size-6 shrink-0 items-center justify-center rounded-full border border-zinc-300 font-mono text-[10px] text-zinc-500 dark:border-zinc-700 dark:text-zinc-400">{String(index + 1).padStart(2, "0")}</span>
-            <span className="min-w-0 flex-1 font-medium">{item.lesson.title}</span>
-            <span className="text-xs capitalize text-zinc-500">{item.state.replace("-", " ")}</span>
-          </li>
-        ))}
-      </ol>
+      </section>
     </main>
+  );
+}
+
+function Path({ label, done, total }: { label: string; done: number; total: number }) {
+  const percentage = total === 0 ? 0 : (done / total) * 100;
+  return (
+    <div>
+      <div className="flex items-center justify-between text-sm">
+        <span>{label}</span>
+        <span className="font-mono text-xs text-zinc-500">{done}/{total}</span>
+      </div>
+      <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-zinc-100 dark:bg-zinc-800">
+        <div className="h-full rounded-full bg-emerald-500" style={{ width: `${percentage}%` }} />
+      </div>
+    </div>
   );
 }
 
