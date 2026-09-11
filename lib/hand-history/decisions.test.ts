@@ -208,8 +208,7 @@ Total pot $0.05 | Rake $0`),
     expect(decisions.every((d) => d.node === undefined)).toBe(true);
   });
 
-  it("only ever charts the hero's first preflop decision", () => {
-    // The second is facing a three-bet, which is a different node entirely.
+  it("charts a clean response after the hero is three-bet", () => {
     const decisions = decisionsFor(
       hand(`Dealt to Co [Ac Kd]
 Utg: folds
@@ -226,7 +225,40 @@ Total pot $0.60 | Rake $0`),
     const preflop = decisions.filter((d) => d.street === "preflop");
     expect(preflop).toHaveLength(2);
     expect(preflop[0].node).toMatchObject({ scenario: "rfi", position: "CO" });
-    expect(preflop[1].node).toBeUndefined();
+    expect(preflop[1].node).toMatchObject({
+      scenario: "vs-3bet",
+      position: "CO",
+      villain: "BTN",
+    });
+  });
+
+  it("charts a clean response after the hero is four-bet", () => {
+    const decisions = decisionsFor(
+      hand(`Dealt to Co [Ac Kd]
+Utg: raises $0.05 to $0.125
+Hj: folds
+Co: raises $0.125 to $0.40
+Btn: folds
+Sb: folds
+Bb: folds
+Utg: raises $0.40 to $1.20
+Co: calls $0.80
+*** SUMMARY ***
+Total pot $2.45 | Rake $0`),
+    );
+
+    const preflop = decisions.filter((d) => d.street === "preflop");
+    expect(preflop).toHaveLength(2);
+    expect(preflop[0].node).toMatchObject({
+      scenario: "vs-rfi",
+      position: "CO",
+      villain: "UTG",
+    });
+    expect(preflop[1].node).toMatchObject({
+      scenario: "vs-4bet",
+      position: "CO",
+      villain: "UTG",
+    });
   });
 });
 

@@ -19,7 +19,12 @@ import {
   nodeFromRules,
   ruleFor,
 } from "./rules";
-import { SET_MINE_BB, SET_MINE_OOP_BB, VS_OPEN_RULES } from "./rules/preflop";
+import {
+  SET_MINE_BB,
+  SET_MINE_OOP_BB,
+  SQUEEZE_RULES,
+  VS_OPEN_RULES,
+} from "./rules/preflop";
 
 function spot(over: Partial<RuleSpot> = {}): RuleSpot {
   return {
@@ -208,6 +213,22 @@ describe("the money on the table", () => {
       expect(wagers.get(seat), seat).toBe(1);
     }
   });
+
+  it("shows the open and every cold caller before a squeeze", () => {
+    const node = BEGINNER_6MAX.nodes.find(
+      (candidate) =>
+        candidate.key.scenario === "squeeze" &&
+        candidate.key.position === "BB" &&
+        candidate.key.villain === "UTG" &&
+        candidate.key.callers?.join(",") === "HJ,CO",
+    );
+    if (!node) throw new Error("missing BB squeeze over UTG/HJ/CO");
+
+    const wagers = wagersFor(node, BEGINNER_6MAX);
+    expect(wagers.get("UTG")).toBe(BEGINNER_6MAX.openBb);
+    expect(wagers.get("HJ")).toBe(BEGINNER_6MAX.openBb);
+    expect(wagers.get("CO")).toBe(BEGINNER_6MAX.openBb);
+  });
 });
 
 describe("facing a raise", () => {
@@ -293,5 +314,21 @@ describe("facing a raise", () => {
       fishInPot: true,
     });
     expect(actionFor(VS_OPEN_RULES, blind, { useReads: true })).toBe("fold");
+  });
+});
+
+describe("squeezing", () => {
+  it("keeps the automatic range value-first, with the sourced BB/JJ exception", () => {
+    const squeeze = (hand: RuleSpot["hand"], callers: number, position: Position = "BB") =>
+      actionFor(
+        SQUEEZE_RULES,
+        spot({ scenario: "squeeze", hand, callers, position, villain: "UTG", inPosition: false }),
+      );
+
+    expect(squeeze("QQ", 1)).toBe("raise");
+    expect(squeeze("AKo", 1)).toBe("raise");
+    expect(squeeze("JJ", 2)).toBe("raise");
+    expect(squeeze("JJ", 1)).toBe("fold");
+    expect(squeeze("AJs", 2)).toBe("fold");
   });
 });

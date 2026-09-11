@@ -1,4 +1,6 @@
 import Link from "next/link";
+import { StrategyCatalog } from "@/components/strategy-catalog";
+import { getAllStrategies } from "@/lib/strategies";
 
 /**
  * The index.
@@ -16,18 +18,24 @@ const PAGES = [
 ];
 
 export default function Home() {
-  return (
-    <main className="mx-auto w-full max-w-md px-4 py-24">
-      <h1 className="text-3xl font-semibold tracking-tight">Poker</h1>
+  const strategies = getAllStrategies();
 
-      <nav className="mt-10 flex flex-col">
+  return (
+    <main className="mx-auto w-full max-w-5xl px-5 py-16 sm:px-8 sm:py-24">
+      <h1 className="text-4xl font-semibold tracking-tight sm:text-5xl">Poker</h1>
+
+      <StrategyCatalog strategies={strategies} />
+
+      <nav aria-label="Workspace" className="mt-14 max-w-md">
+        <p className="text-xs font-medium uppercase tracking-[0.16em] text-zinc-500">Workspace</p>
         {PAGES.map((page) => (
           <Link
             key={page.href}
             href={page.href}
-            className="border-b border-zinc-200 py-4 text-lg transition hover:pl-2 dark:border-zinc-800"
+            className="group flex items-center justify-between border-b border-zinc-200 py-4 text-base transition hover:pl-1 dark:border-zinc-800"
           >
             {page.label}
+            <span className="text-zinc-400 transition group-hover:translate-x-0.5">→</span>
           </Link>
         ))}
       </nav>

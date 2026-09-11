@@ -67,27 +67,30 @@ describe("the chart set as a whole", () => {
     // Version 9 brings facing a raise back, and the difference is where it
     // comes from: six rules the book actually states, evaluated per seat pair,
     // rather than fifteen ranges someone invented.
-    expect(BEGINNER_6MAX.nodes).toHaveLength(52);
+    expect(BEGINNER_6MAX.nodes).toHaveLength(181);
     expect(BEGINNER_6MAX.nodes.filter((n) => n.key.scenario === "rfi")).toHaveLength(6);
     expect(
       BEGINNER_6MAX.nodes.filter((n) => n.key.scenario === "vs-limp"),
     ).toHaveLength(1);
-    // Fifteen each: every ordered pair of seats where one can raise into the
-    // other, then the same pairs the other way round for the re-raises.
+    // Fifteen pairs at each of the supported 50bb and 100bb stack buckets.
     for (const scenario of ["vs-rfi", "vs-3bet", "vs-4bet"]) {
       expect(
         BEGINNER_6MAX.nodes.filter((n) => n.key.scenario === scenario),
         scenario,
-      ).toHaveLength(15);
+      ).toHaveLength(30);
     }
-    expect(BEGINNER_6MAX.nodes.filter((n) => n.key.villain)).toHaveLength(45);
+    // Forty-two possible opener/caller/hero arrangements at each stack depth.
+    expect(BEGINNER_6MAX.nodes.filter((n) => n.key.scenario === "squeeze")).toHaveLength(84);
+    expect(BEGINNER_6MAX.nodes.filter((n) => n.key.villain)).toHaveLength(174);
   });
 
   it("gives one answer to facing a raise, not fifteen", () => {
     // The claim the generated nodes make. If these ever diverge it means a rule
     // has started depending on the seats, which at 100bb the book's rules do
     // not — and the drill would be back to teaching fifteen charts.
-    const facing = BEGINNER_6MAX.nodes.filter((n) => n.key.scenario === "vs-rfi");
+    const facing = BEGINNER_6MAX.nodes.filter(
+      (n) => n.key.scenario === "vs-rfi" && n.key.stackBb === 100,
+    );
     const shapes = new Set(
       facing.map((node) =>
         allHands()
@@ -164,22 +167,21 @@ describe("the chart set as a whole", () => {
     expect([...behind].filter((hand) => !opening.has(hand))).toEqual([]);
   });
 
-  it("leaves the spots the book does not state uncovered rather than guessing", () => {
+  it("covers the sourced squeeze baseline without inventing the remaining multiway tree", () => {
     // The silence is the feature, and it keeps moving rather than going away.
-    // Version 10 closed the raise-3bet-4bet spine, because the book states a
-    // rule for each. It states nothing usable about squeezes or multiway
-    // limped pots away from the button, so those stay unmatched and the grader
-    // keeps skipping them — a chart that grew a scenario must not start
-    // marking its neighbours wrong.
+    // The squeeze range is now explicitly sourced. Multiway limped pots away
+    // from the button still are not, so the chart does not pretend its new
+    // scenario makes the whole remaining tree gradeable.
     const covered = new Set(BEGINNER_6MAX.nodes.map((n) => n.key.scenario));
     expect([...covered].sort()).toEqual([
       "rfi",
+      "squeeze",
       "vs-3bet",
       "vs-4bet",
       "vs-limp",
       "vs-rfi",
     ]);
-    expect(covered.has("squeeze")).toBe(false);
+    expect(covered.has("squeeze")).toBe(true);
   });
 
   it("gives every node a unique id", () => {
@@ -634,7 +636,7 @@ describe("facing an open", () => {
   it("plays facing a 3-bet and a 4-bet the way the book states", () => {
     const node = (scenario: string) => {
       const found = BEGINNER_6MAX.nodes.find(
-        (n) => n.key.scenario === scenario,
+        (n) => n.key.scenario === scenario && n.key.stackBb === 100,
       );
       if (!found) throw new Error(`no ${scenario} node`);
       return found;

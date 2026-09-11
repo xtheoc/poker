@@ -367,86 +367,70 @@ export const PLAYSTYLE: readonly PlaySection[] = [
         lines: [
           {
             act: "fold",
-            then: "No top pair or better by the turn — not another penny in the pot.",
-          },
-          {
-            act: "check",
-            then: "Unless they bet a quarter pot or less and you have any equity at all.",
+            when: "No top pair or better",
+            then: "Give up. Don't put another penny in the pot unless they bet very small (under 1/4 pot) and you have a chance to improve.",
           },
         ],
       },
       {
-        heading: "With a hand",
+        heading: "Betting for value",
         lines: [
           {
-            when: "Top pair or a small overpair, vs fish or SLP",
-            then: "Bet again, around 75%",
+            when: "Top pair or small overpair vs fish or SLP (passive caller)",
+            then: "Bet 75% of the pot.",
             act: "bet",
           },
           {
-            when: "Top pair or a small overpair, vs regs",
-            then: "Pot control. Check, and check/fold against some.",
+            when: "Top pair or small overpair vs TAG (good regular)",
+            then: "Control the pot size. Check, or check and fold to a bet.",
             act: "check",
           },
           {
             when: "Two pair or better",
-            then: "Bet 75%+ against everyone. Play for stacks.",
+            then: "Bet 75%+ against everyone. Play for their whole stack.",
             act: "bet",
           },
         ],
       },
       {
-        heading: "Facing action",
+        heading: "Facing a raise or bet",
         lines: [
           {
-            when: "They raise or lead the turn",
-            then: "Fold — including an overpair, a fair bit of the time",
+            when: "They raise or bet into you",
+            then: "Fold often, even with an overpair. A turn raise usually means they have a huge hand.",
             act: "fold",
           },
           {
-            when: "Rule of thumb",
-            then: "If you can't beat two pair, strongly consider folding",
+            when: "General rule",
+            then: "If your hand can't beat two pair, strongly consider folding.",
             act: "fold",
-          },
-          {
-            when: "Exceptions",
-            then: "A live dynamic where you've been running them over, or a maniac",
-            act: "check",
           },
         ],
-        note: "A turn raise is far stronger than a flop raise. Bluffing there costs a big chunk of a stack, and micro players call down with mediocre hands rather than raising them.",
+        note: "Microstakes players rarely bluff-raise the turn. It costs too much.",
       },
       {
-        heading: "Betting without a hand",
+        heading: "Betting as a bluff",
         lines: [
           {
-            when: "Sticky reg who floats, broadway turn",
-            then: "Fire 60–70%. One bullet — give up on the river.",
+            when: "You picked up a good draw",
+            then: "Bet again.",
             act: "bet",
           },
-          { when: "You picked up a good draw", then: "Fire again", act: "bet" },
           {
-            when: "A fish, any card",
-            then: "Never. Pot control even with a draw.",
+            when: "Against a fish (plays too many hands, calls too much)",
+            then: "Never bluff. Keep the pot small if you only have a draw.",
             act: "fold",
           },
           {
-            when: "Flop checked through and you have a hand",
-            then: "Delayed cbet — bet for value",
+            when: "Flop checked through, you have a hand",
+            then: "Bet for value now. If they raise, fold.",
             act: "bet",
           },
-          { when: "Your delayed cbet gets raised", then: "Fold", act: "fold" },
           {
             when: "Flop checked through, you have nothing, in position",
-            then: "Always stab. Nobody checks twice with anything good.",
+            then: "Always bet. Nobody checks twice with a good hand.",
             act: "bet",
           },
-          {
-            when: "Same but out of position, broadway turn",
-            then: "Stab around 60%",
-            act: "bet",
-          },
-          { when: "Same but a middling turn", then: "Give up", act: "fold" },
         ],
       },
     ],
@@ -459,86 +443,77 @@ export const PLAYSTYLE: readonly PlaySection[] = [
       {
         heading: "No pair",
         lines: [
-          { when: "Default", then: "Give up", act: "fold" },
+          { when: "Default", then: "Give up.", act: "fold" },
           {
-            when: "A fish leads about a quarter pot and the draws missed",
-            then: "Call with AJ-high or better only",
+            when: "A fish bets small (1/4 pot) and obvious draws missed",
+            then: "Call with AJ-high or better.",
             act: "check",
           },
-          { when: "The same but half pot or more", then: "Fold", act: "fold" },
         ],
       },
       {
         heading: "Value betting",
         lines: [
-          { when: "Top pair", then: "About two thirds of the pot", act: "bet" },
-          { when: "Top pair vs fish or SLP", then: "Bet big", act: "bet" },
+          { when: "Top pair", then: "Bet about 2/3 of the pot.", act: "bet" },
+          { when: "Top pair vs fish or SLP", then: "Bet big.", act: "bet" },
           {
             when: "Middle pair vs fish or SLP",
-            then: "Value bet, right down to the bottom of the range",
+            then: "Bet for value. They will call with worse.",
             act: "bet",
           },
           {
-            when: "Middle pair, dry board, vs a fish",
-            then: "Half pot — it invites the hero call",
+            when: "Middle pair, board has no draws, vs a fish",
+            then: "Bet half pot to invite a hero call.",
             act: "bet",
           },
           {
-            when: "Middle pair vs a reg",
-            then: "Only with a good kicker or better",
+            when: "Middle pair vs a good regular (TAG)",
+            then: "Check, unless you have a great kicker.",
             act: "check",
           },
           {
             when: "Third pair and below",
-            then: "Check it down against everyone",
+            then: "Check it down against everyone.",
             act: "check",
           },
         ],
       },
       {
-        heading: "Value calling — read their AF",
+        heading: "Calling a bet (Check their Aggression Factor / AF)",
         lines: [
           {
-            when: "AF 1 or less",
-            then: "Fold on any river, safe or scary",
+            when: "AF 1 or less (Passive)",
+            then: "Fold. They only bet good hands.",
             act: "fold",
           },
           {
-            when: "AF about 2",
-            then: "Call a safe river. Fold a scary one.",
+            when: "AF 2",
+            then: "Call if the river card is safe. Fold if it completes draws.",
             act: "check",
           },
           {
-            when: "AF 3–4",
-            then: "Call a safe river. A scary one is close.",
+            when: "AF 3+",
+            then: "Call if safe. A scary card is a close decision.",
             act: "check",
           },
-          { when: "AF 5+", then: "Call either", act: "check" },
           {
-            when: "Smaller than half pot",
-            then: "Call lighter — the price justifies it",
-            act: "check",
-          },
-          { when: "Pot-sized", then: "Usually value. Lean fold.", act: "fold" },
-          {
-            when: "An overbet",
-            then: "Fold without a specific dynamic in play",
+            when: "They bet pot-size or an overbet",
+            then: "Usually a real hand. Fold.",
             act: "fold",
           },
         ],
-        note: "The ladder assumes a bet of 50–75% of the pot. Safe or scary is about the river card, not about your hand.",
       },
       {
-        heading: "They raise the river",
+        heading: "They raise your bet",
         lines: [
           {
-            when: "Any legitimate raise, 3x or more",
-            then: "Fold. Fast, without tanking. Every player type.",
+            when: "Any real raise (3x or more)",
+            then: "Fold instantly. Nobody bluffs here.",
             act: "fold",
           },
           {
             when: "A fish mini-raises a small pot",
-            then: "Call with top pair good kicker or better",
+            then: "Call with top pair, good kicker or better.",
             act: "check",
           },
         ],
@@ -548,45 +523,33 @@ export const PLAYSTYLE: readonly PlaySection[] = [
 
   {
     id: "big",
-    title: "When you have it",
+    title: "Big hands",
     groups: [
       {
-        lines: [{ act: "bet", then: "Sets and overpairs: bet, bet, shove." }],
-        note: "This is where the win rate actually comes from. Bad players do not need coaxing — they call. If they fold they had nothing and you were never getting paid.",
+        lines: [{ act: "bet", when: "Sets and overpairs", then: "Bet flop, bet turn, shove river." }],
+        note: "This is where your win rate comes from. Bad players call big bets. Don't get tricky.",
       },
       {
-        heading: "Sets — the four lines",
+        heading: "Sets (Three of a kind)",
         lines: [
           {
-            when: "In position, you called preflop",
-            then: "Raise their cbet big. If they don't cbet, bet close to pot.",
+            when: "You called preflop",
+            then: "Raise big if they bet. Check-raise big if they check to you.",
             act: "bet",
           },
           {
-            when: "In position, you raised preflop",
-            then: "Cbet big. Raise big if they lead.",
+            when: "You raised preflop",
+            then: "Bet big (cbet). If they lead into you, raise big.",
             act: "bet",
           },
-          {
-            when: "Out of position, you called",
-            then: "Check-raise big",
-            act: "bet",
-          },
-          { when: "Out of position, you raised", then: "Cbet big", act: "bet" },
           {
             when: "What big means",
-            then: "3–4x their bet. More against bad players when deep, far more against a min-bet.",
-            act: "read",
-          },
-          { when: "Turn", then: "Lead big. Never a second check-raise.", act: "bet" },
-          {
-            when: "You get raised on the flop",
-            then: "Re-raise 3x or shove. Get it in now.",
+            then: "3–4x their bet. Even more against bad players or tiny bets.",
             act: "bet",
           },
           {
-            when: "Four to a straight, or a flush you have no part of",
-            then: "Slow down, and possibly fold the river",
+            when: "Board gets scary (four to a straight or flush)",
+            then: "Slow down. Consider folding the river.",
             act: "fold",
           },
         ],
@@ -595,74 +558,44 @@ export const PLAYSTYLE: readonly PlaySection[] = [
         heading: "Other big hands",
         lines: [
           {
-            when: "Two pair on a dry board",
-            then: "Three big streets against every type",
+            when: "Two pair on a safe board",
+            then: "Bet big on all three streets.",
             act: "bet",
           },
           {
-            when: "Two pair, two draws complete",
-            then: "Check/call, check behind, or check/fold",
+            when: "Two pair, but straight and flush draws hit",
+            then: "Check/call or check/fold.",
             act: "check",
           },
           {
-            when: "Top pair top kicker on a paired low board",
-            then: "Three big streets against fish, SLPs and most regs",
-            act: "bet",
-          },
-          {
-            when: "Quads or better",
-            then: "The one slowplay. Shove the river on an action card.",
+            when: "Four of a kind or better",
+            then: "The only time you slowplay. Shove the river.",
             act: "check",
           },
           {
-            when: "Nut hand, bad player, flop",
-            then: "Raise around 6x — deliberately ludicrous",
+            when: "You have the absolute best hand (nuts) against a bad player on the flop",
+            then: "Raise huge (like 6x).",
             act: "bet",
           },
         ],
       },
       {
-        heading: "An overpair facing aggression",
+        heading: "Overpair facing a raise",
         lines: [
           {
-            when: "A nit or TAG fights back",
-            then: "Fold. The easiest laydown there is.",
+            when: "A good player (TAG/Nit) raises you",
+            then: "Fold. Easiest decision you'll make.",
             act: "fold",
           },
           {
-            when: "A fish or SLP",
-            then: "Get away much less. Their bets are small — call down.",
+            when: "A fish or SLP raises you",
+            then: "Call down. Their bets are usually small.",
             act: "check",
           },
           {
-            when: "Flop raise versus turn raise",
-            then: "A flop raise can be a draw. A turn raise is the nuts.",
+            when: "Flop raise vs Turn raise",
+            then: "Flop raises can be draws. Turn raises are almost always huge hands.",
             act: "read",
-          },
-        ],
-      },
-      {
-        heading: "Fish tells",
-        lines: [
-          {
-            when: "Min bet, donk bet, probe bet",
-            then: "Weakness. Raise wide, especially in position.",
-            act: "bet",
-          },
-          {
-            when: "Bet size doesn't change street to street",
-            then: "The hand didn't improve. Rarely better than top pair.",
-            act: "read",
-          },
-          {
-            when: "They bluff missed draws",
-            then: "For a quarter pot. A pot-sized bet is a real hand.",
-            act: "read",
-          },
-          {
-            when: "They read a big bet as a bluff",
-            then: "So show up with the nuts, every time",
-            act: "bet",
           },
         ],
       },
@@ -671,81 +604,61 @@ export const PLAYSTYLE: readonly PlaySection[] = [
 
   {
     id: "spots",
-    title: "Named spots",
+    title: "Common situations",
     groups: [
       {
-        heading: "Limped pots",
+        heading: "Limped pots (nobody raised preflop)",
         lines: [
           {
             when: "Getting heavily involved",
-            then: "Two pair or better only. This is one of the biggest sources of routine spew.",
+            then: "You need two pair or better. Playing big pots here is a huge leak.",
             act: "fold",
           },
           {
-            when: "Top pair no kicker, out of position",
-            then: "Check/call. Don't build a pot.",
+            when: "Top pair, bad kicker, out of position",
+            then: "Check and call. Don't build a big pot.",
             act: "check",
           },
           {
             when: "Checked to you twice",
-            then: "Bet regardless of the card. Nobody checks twice with anything good.",
+            then: "Bet any two cards. Nobody has anything.",
             act: "bet",
           },
         ],
       },
       {
-        heading: "Draws",
+        heading: "Draws (waiting for a straight or flush)",
         lines: [
           {
-            when: "A non-nut draw",
-            then: "Check the reverse implied odds first — your reward for hitting may be losing a huge pot",
+            when: "Drawing to a hand that isn't the best possible (non-nut draw)",
+            then: "Be careful. Hitting it might just cost you a huge pot against a better flush.",
             act: "fold",
           },
-          { when: "12 outs or more", then: "Raise", act: "bet" },
+          { when: "12 outs or more (e.g. straight + flush draw)", then: "Raise.", act: "bet" },
           {
             when: "Fewer than 12 outs",
-            then: "Call, and play a smaller pot",
+            then: "Call, keep the pot small.",
             act: "check",
           },
           {
             when: "A big draw against a bad player",
-            then: "Play it passively. Worth a percent to avoid a monstrous flip and the tilt after it.",
+            then: "Play passively. Don't flip coins for your whole stack.",
             act: "check",
           },
         ],
       },
       {
-        heading: "Maniacs",
+        heading: "Maniacs (crazy aggressive players)",
         lines: [
-          { when: "Calling their open shove", then: "66+ and A9o+", act: "check" },
-          {
-            when: "Early position, full ring, many left to act",
-            then: "Fold AJ and 99 anyway",
-            act: "fold",
-          },
+          { when: "Calling their open shove", then: "66+ and A9o+.", act: "check" },
           {
             when: "Splashy but not shoving",
-            then: "Get a pair or a draw and let them bet",
+            then: "Make a pair or a draw and let them bet into you.",
             act: "check",
           },
           {
             when: "You pick up a big hand",
-            then: "Limp re-raise — unless they min-3-bet everything",
-            act: "bet",
-          },
-          {
-            when: "Their table",
-            then: "Pull it out of the stack and give it your attention",
-            act: "read",
-          },
-        ],
-      },
-      {
-        heading: "Dynamic",
-        lines: [
-          {
-            when: "You just won big pots off a fish without showing",
-            then: "Value bet lighter, bluff-catch more, waste fewer cbets",
+            then: "Limp, then re-raise when they inevitably bet.",
             act: "bet",
           },
         ],
@@ -759,58 +672,38 @@ export const PLAYSTYLE: readonly PlaySection[] = [
     groups: [
       {
         lines: [
-          { when: "Bankroll", then: "20–30 buy-ins", act: "read" },
+          { when: "Bankroll", then: "20–30 buy-ins.", act: "read" },
           {
             when: "Buy in for",
-            then: "100bb while learning, 250bb once you beat it",
+            then: "100bb. Always top up.",
             act: "read",
           },
-          { when: "A deep fish at the table", then: "Match his stack", act: "read" },
+          { when: "A deep fish at the table", then: "Match his stack size if you can cover it.", act: "read" },
           {
-            when: "Tables",
-            then: "Add one at a time. Stop when your decisions start degrading.",
+            when: "Adding tables",
+            then: "One at a time. Stop when you start making worse decisions.",
             act: "read",
           },
           {
-            when: "Table average VPIP under 20 at 6-max",
-            then: "Leave. There is no fish bringing it up.",
+            when: "Table average VPIP under 20",
+            then: "Leave the table. No bad players to win money from.",
             act: "fold",
           },
           {
-            when: "Anyone with VPIP 40+",
-            then: "Tag as a fish, at the end of the session",
-            act: "read",
-          },
-          {
-            when: "Sitting down",
-            then: "Wait for the big blind. Don't post.",
+            when: "Sitting down or leaving",
+            then: "Always wait for the big blind.",
             act: "check",
           },
           {
-            when: "Leaving",
-            then: "Play your free hands until the blind comes round",
-            act: "check",
-          },
-          {
-            when: "An open-shoving maniac at the table",
-            then: "Post and sit immediately",
-            act: "bet",
-          },
-          {
-            when: "Stop-loss, 3–5 buy-ins",
-            then: "Close every table at once. Leave the room. Done for the day.",
+            when: "Stop-loss (losing 3–5 buy-ins)",
+            then: "Close everything. Done for the day.",
             act: "fold",
           },
-          { when: "Tilting at all", then: "Leave all tables now", act: "fold" },
+          { when: "Feeling tilt or frustration", then: "Leave immediately.", act: "fold" },
           {
             when: "The short run",
-            then: "Under 100k hands. It means nothing — judge decisions, not results.",
+            then: "Under 100k hands is just luck. Focus on good decisions, not the money.",
             act: "read",
-          },
-          {
-            when: "A small edge against staying off tilt",
-            then: "Take the lower variance",
-            act: "check",
           },
         ],
       },
@@ -824,28 +717,18 @@ export const PLAYSTYLE: readonly PlaySection[] = [
       {
         lines: [
           {
-            when: "Fast-fold pools",
-            then: "Capped at 100bb with no table selection, so the deep-stack, table-selection and dynamic rules don't apply there",
-            act: "read",
-          },
-          {
-            when: "Cbet sizing against regs at NL5+",
-            then: "The modern default is much smaller — 25–33% on dry boards. Keep the sizes above for recreational players.",
+            when: "Fast-fold pools (Zoom)",
+            then: "Deep-stack and table-selection rules don't apply there.",
             act: "read",
           },
           {
             when: "Cbet frequency against thinking opponents",
-            then: "75% is high by modern standards. Against fish it is still right.",
+            then: "75% is high today, but against NL2 fish it is still correct.",
             act: "read",
           },
           {
             when: "Blind defence",
-            then: "Modern play defends the big blind wider against late-position opens. The 'lose the least' stance is right; the ranges are tighter than current standards.",
-            act: "read",
-          },
-          {
-            when: "Regs with solver habits",
-            then: "Multiple sizings, small cbets, turn probes. Against those specific players 'their raise is the nuts' softens — against the rest of the pool it holds.",
+            then: "Modern players defend the big blind wider. The book's tight ranges are safer while learning.",
             act: "read",
           },
         ],

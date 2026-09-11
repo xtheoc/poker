@@ -39,6 +39,7 @@ import {
 import { type Hand, parseRange } from "../hands";
 import { nodeFromRules } from "../rules";
 import {
+  SQUEEZE_RULES,
   VS_3BET_RULES,
   VS_4BET_RULES,
   VS_OPEN_RULES,
@@ -340,17 +341,59 @@ export const RFI_RANGES: ReadonlyArray<{
  * since it learned to recognise a single raise. Until now nothing matched them,
  * so every hand where somebody raised into the reader counted as uncharted.
  */
-const VS_OPEN_NODES: ChartNode[] = POSITIONS.flatMap((villain, opener) =>
-  POSITIONS.slice(opener + 1).map((position) =>
-    nodeFromRules(VS_OPEN_RULES, {
-      scenario: "vs-rfi",
-      position,
-      villain,
-      stackBb: STACK_BB,
-      treeId: TREE_ID,
+const RESPONSE_STACKS = [50, STACK_BB] as const;
+
+const VS_OPEN_NODES: ChartNode[] = RESPONSE_STACKS.flatMap((stackBb) =>
+  POSITIONS.flatMap((villain, opener) =>
+    POSITIONS.slice(opener + 1).map((position) =>
+      nodeFromRules(VS_OPEN_RULES, {
+        scenario: "vs-rfi",
+        position,
+        villain,
+        stackBb,
+        treeId: TREE_ID,
+      }),
+    ),
+  ),
+);
+
+/**
+ * Open, at least one cold call, then the hero re-raises.
+ *
+ * The caller seats are preserved in the node identity rather than collapsed to
+ * a count. They let the visual drill show the actual dead money and prevent a
+ * BB spot over UTG/BTN from masquerading as UTG/HJ/SB. The rule only currently
+ * distinguishes the author’s exact two-caller BB/JJ example; the rest share a
+ * tight value baseline, but they remain distinct situations for future rules.
+ */
+const SQUEEZE_NODES: ChartNode[] = RESPONSE_STACKS.flatMap((stackBb) =>
+  POSITIONS.flatMap((villain, opener) =>
+    POSITIONS.slice(opener + 2).flatMap((position, heroIndex) => {
+      const hero = opener + 2 + heroIndex;
+      const between = POSITIONS.slice(opener + 1, hero);
+      const callerSets = subsets(between);
+      return callerSets.map((callers) =>
+        nodeFromRules(SQUEEZE_RULES, {
+          scenario: "squeeze",
+          position,
+          villain,
+          callers,
+          stackBb,
+          treeId: TREE_ID,
+        }),
+      );
     }),
   ),
 );
+
+/** Every non-empty caller combination between the opener and hero. */
+function subsets(seats: readonly Position[]): Position[][] {
+  const sets: Position[][] = [];
+  for (let mask = 1; mask < 1 << seats.length; mask++) {
+    sets.push(seats.filter((_, index) => (mask & (1 << index)) !== 0));
+  }
+  return sets;
+}
 
 /**
  * The reader opened, somebody 3-bet, and it is back on him.
@@ -360,15 +403,17 @@ const VS_OPEN_NODES: ChartNode[] = POSITIONS.flatMap((villain, opener) =>
  * Fifteen again, and identical again at 100bb — the stack rule that separates
  * them only bites at 50 and below.
  */
-const VS_3BET_NODES: ChartNode[] = POSITIONS.flatMap((position, hero) =>
-  POSITIONS.slice(hero + 1).map((villain) =>
-    nodeFromRules(VS_3BET_RULES, {
-      scenario: "vs-3bet",
-      position,
-      villain,
-      stackBb: STACK_BB,
-      treeId: TREE_ID,
-    }),
+const VS_3BET_NODES: ChartNode[] = RESPONSE_STACKS.flatMap((stackBb) =>
+  POSITIONS.flatMap((position, hero) =>
+    POSITIONS.slice(hero + 1).map((villain) =>
+      nodeFromRules(VS_3BET_RULES, {
+        scenario: "vs-3bet",
+        position,
+        villain,
+        stackBb,
+        treeId: TREE_ID,
+      }),
+    ),
   ),
 );
 
@@ -387,15 +432,17 @@ const VS_3BET_NODES: ChartNode[] = POSITIONS.flatMap((position, hero) =>
  * would have modelled only the cold 4-bet, which the book singles out as the
  * rare case, and would have left the ordinary one uncharted.
  */
-const VS_4BET_NODES: ChartNode[] = POSITIONS.flatMap((villain, opener) =>
-  POSITIONS.slice(opener + 1).map((position) =>
-    nodeFromRules(VS_4BET_RULES, {
-      scenario: "vs-4bet",
-      position,
-      villain,
-      stackBb: STACK_BB,
-      treeId: TREE_ID,
-    }),
+const VS_4BET_NODES: ChartNode[] = RESPONSE_STACKS.flatMap((stackBb) =>
+  POSITIONS.flatMap((villain, opener) =>
+    POSITIONS.slice(opener + 1).map((position) =>
+      nodeFromRules(VS_4BET_RULES, {
+        scenario: "vs-4bet",
+        position,
+        villain,
+        stackBb,
+        treeId: TREE_ID,
+      }),
+    ),
   ),
 );
 
@@ -459,9 +506,9 @@ export const BEGINNER_6MAX: ChartSet = {
   // its prose over its chart row for the second time.
   // 9 added facing a single raise — fifteen nodes generated from six rules
   // rather than authored, and the first scenario here that is not an open.
-  // 10 closed preflop: facing a 3-bet and facing a 4-bet, generated the same
-  // way. Fifty-two nodes now, from twenty-odd rules.
-  version: 10,
+  // 10 closed the normal raise/three-bet/four-bet spine. 11 adds a sourced,
+  // value-first squeeze family with caller identities retained for review.
+  version: 11,
   name: "Crushing The Microstakes · 6-max · 100bb",
   provider: "authored",
   treeId: TREE_ID,
@@ -475,8 +522,9 @@ export const BEGINNER_6MAX: ChartSet = {
     "plus the whole facing-action tree — a raise, a 3-bet, a 4-bet — which is " +
     "generated from the book's own rules rather than authored as charts, " +
     "because it states one answer for each of those spots rather than one per " +
-    "seat. Squeezes and limped multiway pots past the button are still " +
-    "uncovered, and decisions this set does not cover are skipped rather than " +
+    "seat. The squeeze tree is deliberately value-first: QQ+ and AK, plus the " +
+    "author's exact BB/JJ/two-caller example. Read-dependent light squeezes and " +
+    "limped multiway pots past the button stay uncovered, and decisions this set does not cover are skipped rather than " +
     "guessed at. The small blind's " +
     "opening range is inferred — the book calls that spot player-dependent and " +
     "never states a width. It is not solver output, and every hand is a single " +
@@ -486,6 +534,7 @@ export const BEGINNER_6MAX: ChartSet = {
     ...RFI_NODES,
     ...VS_LIMP_NODES,
     ...VS_OPEN_NODES,
+    ...SQUEEZE_NODES,
     ...VS_3BET_NODES,
     ...VS_4BET_NODES,
   ],

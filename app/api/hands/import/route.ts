@@ -4,6 +4,11 @@ import { z } from "zod";
 import { MissingTableError, importHands } from "@/lib/hands-store";
 import { BEGINNER_6MAX } from "@/lib/poker/charts/beginner-6max";
 import { optionalUser } from "@/lib/session";
+import { getAllStrategies } from "@/lib/strategies";
+import {
+  MissingStrategyDecisionTablesError,
+  MissingStrategyReviewTablesError,
+} from "@/lib/strategies/hand-review";
 
 /**
  * Import a hand-history file.
@@ -59,12 +64,17 @@ export async function POST(request: Request) {
       session.userId,
       parsed.data.text,
       BEGINNER_6MAX,
+      { strategies: getAllStrategies() },
     );
 
     // The session list and the daily queue are server-rendered, so they have to
     // be told the rows underneath them moved.
     revalidatePath("/hands");
     revalidatePath("/today");
+    for (const strategy of getAllStrategies()) {
+      revalidatePath(`/strategies/${strategy.id}`);
+      revalidatePath(`/strategies/${strategy.id}/hands`);
+    }
 
     return NextResponse.json({
       parsed: summary.parsed,
@@ -73,6 +83,7 @@ export async function POST(request: Request) {
       charted: summary.charted,
       mistakes: summary.mistakes,
       latestHandId: summary.latestHandId,
+      strategyReviewed: summary.strategyReviewed,
       // Reasons only. The unreadable text itself is not worth sending back, and
       // the count is what tells you whether to care.
       unparsed: summary.unparsed.length,
@@ -89,6 +100,24 @@ export async function POST(request: Request) {
         {
           error:
             "The hand tables do not exist yet. Run supabase/migrations/0003_hands.sql in the Supabase SQL editor, then try again.",
+        },
+        { status: 503 },
+      );
+    }
+    if (error instanceof MissingStrategyReviewTablesError) {
+      return NextResponse.json(
+        {
+          error:
+            "Hands were saved, but strategy review is not set up yet. Run supabase/migrations/0010_strategy_hand_reviews.sql, then import again.",
+        },
+        { status: 503 },
+      );
+    }
+    if (error instanceof MissingStrategyDecisionTablesError) {
+      return NextResponse.json(
+        {
+          error:
+            "Hands were saved, but decision coverage is not set up yet. Run supabase/migrations/0011_strategy_decisions.sql, then import again.",
         },
         { status: 503 },
       );

@@ -127,6 +127,15 @@ export interface NodeKey {
   position: Position;
   /** The opponent whose action created this spot; absent for an unopened pot. */
   villain?: Position;
+  /**
+   * Players who called the original open before the hero acts.
+   *
+   * This only belongs to a squeeze node. Their identities are part of the
+   * situation, not decorative table state: a BB squeeze over UTG and BTN is a
+   * different decision from squeezing UTG and two callers, and the table must
+   * show where the dead money came from.
+   */
+  callers?: readonly Position[];
   /** Effective stack in big blinds. */
   stackBb: number;
   /** Which betting-tree convention this node belongs to, e.g. "6max-2.5x". */
@@ -144,7 +153,8 @@ export type NodeId = string;
  */
 export function nodeId(key: NodeKey): NodeId {
   const villain = key.villain ? `-vs-${key.villain}` : "";
-  return `${key.treeId}/${key.stackBb}bb/${key.scenario}/${key.position}${villain}`;
+  const callers = key.callers?.length ? `-with-${key.callers.join("-")}` : "";
+  return `${key.treeId}/${key.stackBb}bb/${key.scenario}/${key.position}${villain}${callers}`;
 }
 
 export interface ChartNode {
@@ -181,6 +191,12 @@ export interface ChartSet {
    */
   openBb: number;
   /**
+   * Position-specific opening sizes where a strategy deliberately uses a
+   * sizing ladder. Omitted positions use `openBb`; the small blind still uses
+   * `sbOpenBb` unless it appears here.
+   */
+  openSizes?: Partial<Record<Position, number>>;
+  /**
    * What the small blind opens to.
    *
    * Larger, because the small blind plays every later street out of position
@@ -204,7 +220,7 @@ export const BB_POST = 1;
 
 /** What a given seat opens to under this set's convention. */
 export function openSizeBb(set: ChartSet, position: Position): number {
-  return position === "SB" ? set.sbOpenBb : set.openBb;
+  return set.openSizes?.[position] ?? (position === "SB" ? set.sbOpenBb : set.openBb);
 }
 
 /**
@@ -273,6 +289,12 @@ export function wagersFor(
     wagers.set(villain, openSizeBb(set, villain));
   }
 
+  if (scenario === "squeeze" && villain) {
+    const open = openSizeBb(set, villain);
+    wagers.set(villain, open);
+    for (const caller of node.key.callers ?? []) wagers.set(caller, open);
+  }
+
   if (scenario === "vs-3bet" && villain) {
     // Hero opened; villain re-raised over the top.
     const open = openSizeBb(set, hero);
@@ -320,6 +342,11 @@ export function limpersFor(node: ChartNode): Position[] {
   return POSITIONS.slice(0, hero).filter(
     (seat) => seat !== "SB" && seat !== "BB",
   );
+}
+
+/** Players who have called an open before the hero in a squeeze spot. */
+export function squeezeCallersFor(node: ChartNode): Position[] {
+  return node.key.scenario === "squeeze" ? [...(node.key.callers ?? [])] : [];
 }
 
 /** Look up a node in a chart set. Returns null when the set does not cover it. */

@@ -133,8 +133,15 @@ export function heroDecisions(
             actualBb:
               action.amount !== undefined ? round(action.amount / bb) : undefined,
             node:
-              street.street === "preflop" && heroPreflopDecisions === 0
-                ? preflopNode(parsed, heroName, street.actions, action, options)
+              street.street === "preflop"
+                ? preflopNode(
+                    parsed,
+                    heroName,
+                    street.actions,
+                    action,
+                    heroPreflopDecisions,
+                    options,
+                  )
                 : undefined,
           });
         }
@@ -163,27 +170,31 @@ export function heroDecisions(
 /**
  * The chart node for the hero's first preflop decision, when there is one.
  *
- * Only two shapes are recognised, because only two are charted: an unopened pot
- * where the hero acts first, and a single raise with nobody calling in between.
- * Everything else — limped pots, cold calls, three-bets and beyond — is left
- * unmatched on purpose.
+ * The first action may be an opening decision, a limped pot, or a response to
+ * one raise. A later hero action can be the decision after a three-bet or a
+ * four-bet. Anything with a cold caller, squeeze, or a non-standard raising
+ * sequence remains unmatched: it is better to leave a real but unsupported
+ * spot ungraded than call a different situation the same node.
  */
 function preflopNode(
   parsed: ParsedHand,
   heroName: string,
   actions: readonly Action[],
   heroAction: Action,
+  heroPreflopDecisions: number,
   options: ExtractOptions,
 ): NodeKey | undefined {
   const position = parsed.seats.find((s) => s.player === heroName)?.position;
   if (!position) return undefined;
 
+  const preceding: Action[] = [];
   let raises = 0;
   let coldCalls = 0;
   let lastRaiser: Position | undefined;
 
   for (const action of actions) {
     if (action === heroAction) break;
+    preceding.push(action);
     if (action.type === "raise") {
       raises++;
       lastRaiser =
@@ -202,6 +213,12 @@ function preflopNode(
     stackBb: options.chartStackBb ?? 100,
     treeId: options.treeId,
   };
+
+  // A later hero decision only has a chart when the earlier preflop sequence
+  // is clean and exactly matches the book's response trees.
+  if (heroPreflopDecisions > 0) {
+    return responseNode(parsed, heroName, preceding, coldCalls, base);
+  }
 
   if (raises === 0) {
     // Folded round to the big blind is not a decision — everyone passed, the
@@ -236,6 +253,49 @@ function preflopNode(
   }
 
   return undefined;
+}
+
+function responseNode(
+  parsed: ParsedHand,
+  heroName: string,
+  preceding: readonly Action[],
+  coldCalls: number,
+  base: Pick<NodeKey, "stackBb" | "treeId">,
+): NodeKey | undefined {
+  if (coldCalls > 0) return undefined;
+
+  const raises = preceding.filter((action) => action.type === "raise");
+  const heroRaises = raises.filter((action) => action.player === heroName);
+  const position = parsed.seats.find((seat) => seat.player === heroName)?.position;
+  if (!position || heroRaises.length !== 1) return undefined;
+
+  // Hero opened, one later player three-bet, and the action came back cleanly.
+  if (
+    raises.length === 2 &&
+    raises[0]?.player === heroName &&
+    raises[1]?.player !== heroName
+  ) {
+    const villain = positionOf(parsed, raises[1]!.player);
+    return villain ? { scenario: "vs-3bet", position, villain, ...base } : undefined;
+  }
+
+  // Someone opened, hero three-bet, that original opener four-bet. A cold
+  // four-bet is intentionally excluded because the playbook names it as a
+  // separate exception rather than a baseline range.
+  if (
+    raises.length === 3 &&
+    raises[1]?.player === heroName &&
+    raises[0]?.player === raises[2]?.player
+  ) {
+    const villain = positionOf(parsed, raises[2]!.player);
+    return villain ? { scenario: "vs-4bet", position, villain, ...base } : undefined;
+  }
+
+  return undefined;
+}
+
+function positionOf(parsed: ParsedHand, player: string): Position | undefined {
+  return parsed.seats.find((seat) => seat.player === player)?.position ?? undefined;
 }
 
 function sum(values: Iterable<number>): number {

@@ -1,5 +1,6 @@
 import { type Card, SUIT_PIPS } from "@/lib/poker/cards";
 import { BB_POST, POSITIONS, type Position } from "@/lib/poker/charts";
+import type { PlayerType } from "@/lib/poker/rules";
 import { cn } from "@/lib/utils";
 
 /**
@@ -35,9 +36,11 @@ export function PokerTable({
   position,
   villain,
   limpers = [],
+  callers = [],
   wagers,
   cards,
   revealed = true,
+  playerTypes = {},
 }: {
   /** Your seat this hand. */
   position: Position;
@@ -51,6 +54,8 @@ export function PokerTable({
    * would be nothing left to tell them apart.
    */
   limpers?: readonly Position[];
+  /** Players who called an open in a squeeze spot. */
+  callers?: readonly Position[];
   /**
    * Money in front of each seat, in big blinds.
    *
@@ -63,6 +68,8 @@ export function PokerTable({
   cards: [Card, Card] | null;
   /** False shows the cards face down, for the moment before a spot begins. */
   revealed?: boolean;
+  /** Read badges shown as the same colour rings used at the poker table. */
+  playerTypes?: Partial<Record<Position, PlayerType>>;
 }) {
   // Rotate the position list so the hero is first. Everyone else keeps their
   // order, which is what makes the button land in the right place on its own.
@@ -83,7 +90,8 @@ export function PokerTable({
         const isHero = i === 0;
         const isVillain = seat === villain;
         const wager = wagers.get(seat) ?? null;
-        const inHand = isHero || isVillain || limpers.includes(seat);
+        const inHand = isHero || isVillain || limpers.includes(seat) || callers.includes(seat);
+        const playerType = playerTypes[seat];
 
         return (
           <div key={seat}>
@@ -124,9 +132,25 @@ export function PokerTable({
                     // A limper is in the hand but has done nothing to respect.
                     limpers.includes(seat) &&
                       "border-zinc-400 dark:border-zinc-500",
+                    callers.includes(seat) &&
+                      "border-zinc-400 dark:border-zinc-500",
                   )}
                   aria-label={seat}
-                />
+                >
+                  {playerType && (
+                    <span
+                      title={playerType}
+                      className={cn(
+                        "size-4 rounded-full border-2 bg-zinc-100 dark:bg-zinc-950",
+                        playerType === "fish" && "border-blue-500",
+                        playerType === "nit" && "border-emerald-500",
+                        playerType !== "fish" &&
+                          playerType !== "nit" &&
+                          "border-zinc-400 dark:border-zinc-500",
+                      )}
+                    />
+                  )}
+                </span>
 
                 {/* The button, on whoever has it. This is how you read your own
                     position without being told it. */}

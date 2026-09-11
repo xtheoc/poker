@@ -180,7 +180,7 @@ describe("a session of deliberately loose play", () => {
   it("reports accuracy over the spots it can actually grade", () => {
     const stats = statsFor(out.sessionHands);
     // Eight hands played: five first into the pot, two of those opened too
-    // wide, and three blind defences facing a raise.
+    // wide, three blind defences facing a raise, and one response to a 3-bet.
     //
     // This read 5 until version 9. Those three defences were folds against a
     // single raise — real decisions the extractor had been tagging with
@@ -190,17 +190,11 @@ describe("a session of deliberately loose play", () => {
     // because more correct play is being counted rather than because anything
     // got easier.
     //
-    // The direction is the thing to watch. A denominator growing while
-    // mistakes hold is the healthy shape; mistakes rising alongside it would
-    // mean the new rules disagree with how these hands were actually played.
-    //
-    // It read 8 once before, for the opposite and wrong reason: ungraded hands
-    // were counted as graded and, producing no violation, scored as correct.
-    // That bug inflated accuracy. This does not — `charted` now counts only
-    // decisions a node genuinely covers.
-    expect(stats.charted).toBe(8);
+    // The response to a three-bet is also now charted. It is a correct fold in
+    // this fixture, so the denominator grows without inventing a mistake.
+    expect(stats.charted).toBe(9);
     expect(stats.mistakes).toBe(2);
-    expect(stats.accuracy).toBe(75);
+    expect(stats.accuracy).toBeCloseTo(77.777, 2);
   });
 });
 
@@ -216,6 +210,10 @@ describe("the honesty check", () => {
   )
     .replace(/Dealt to Hero \[Jc 8d\]/, "Dealt to Hero [Ac Qd]")
     .replace(/Dealt to Hero \[Th 7c\]/, "Dealt to Hero [Ad Kd]")
+    .replace(
+      "Hero: raises $0.03 to $0.05\nVillain1: raises $0.11 to $0.16\nVillain2: folds\nVillain3: folds\nHero: folds",
+      "Hero: raises $0.03 to $0.05\nVillain1: raises $0.11 to $0.16\nVillain2: folds\nVillain3: folds\nHero: raises $0.34 to $0.50",
+    )
     .replace(/Dealt to Hero \[Qh 9c\]/, "Dealt to Hero [7h 2c]")
     .replace(/Dealt to Hero \[Kc 9d\]/, "Dealt to Hero [8c 2d]")
     .replace(/Dealt to Hero \[Jd 9s\]/, "Dealt to Hero [9d 2s]");

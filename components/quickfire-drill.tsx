@@ -149,6 +149,24 @@ interface Answer {
   peeked: boolean;
 }
 
+/** A completed run, suitable for a strategy-owned spaced-review card. */
+export interface QuickfireResult {
+  score: number;
+  durationMs: number;
+  answers: number;
+  hands: Array<{
+    hand: string;
+    chosenAction: string;
+    expectedAction: string;
+    grade: ActionGrade;
+    score: number;
+    strategyFreq: number;
+    evLossBb?: number;
+    rngRoll?: number;
+    durationMs: number;
+  }>;
+}
+
 type SaveState = "idle" | "saved" | "signed-out" | "failed";
 
 function isRight(answer: Answer): boolean {
@@ -160,6 +178,12 @@ export function QuickfireDrill({
   initialSpots,
   signedIn,
   targets,
+  persistReviews = true,
+  completionStreak,
+  continueAfterMiss = false,
+  onMastery,
+  onComplete,
+  correction,
 }: {
   chartSet: ChartSet;
   /**
@@ -179,6 +203,17 @@ export function QuickfireDrill({
    * batch itself. Absent means random practice over the whole tree.
    */
   targets?: LeakTarget[];
+  /** Strategy lessons record one mastery run, not reviews in the global SRS deck. */
+  persistReviews?: boolean;
+  /** End successfully after this many clean answers in a row. */
+  completionStreak?: number;
+  /** Keep the mistake deck moving after a correction instead of ending the run. */
+  continueAfterMiss?: boolean;
+  onMastery?: (result: { score: number; durationMs: number; answers: number }) => void;
+  /** Called once when a run ends, whether it ended cleanly or on a miss. */
+  onComplete?: (result: QuickfireResult) => void;
+  /** Strategy-owned explanation for a missed decision. */
+  correction?: (spot: QuickfireSpot, expected: ActionKind) => string | undefined;
 }) {
   const [spots, setSpots] = useState<QuickfireSpot[]>(initialSpots);
   const [index, setIndex] = useState(0);
@@ -199,6 +234,8 @@ export function QuickfireDrill({
   const advanceTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   /** Answers not yet sent. A ref, so a save never races a re-render. */
   const pending = useRef<Answer[]>([]);
+  const reported = useRef(false);
+  const completed = useRef(false);
 
   const spot = spots[index];
 
@@ -223,6 +260,7 @@ export function QuickfireDrill({
     const batch = pending.current.filter((a) => !a.peeked);
     pending.current = [];
     if (batch.length === 0) return;
+    if (!persistReviews) return;
     if (!signedIn) {
       setSaveState("signed-out");
       return;
@@ -263,7 +301,7 @@ export function QuickfireDrill({
     } catch {
       setSaveState("failed");
     }
-  }, [signedIn]);
+  }, [persistReviews, signedIn]);
 
   const restart = useCallback(() => {
     setSpots(deal(BATCH, 0));
@@ -276,7 +314,37 @@ export function QuickfireDrill({
     setStopped(false);
     setSaveState("idle");
     startedAt.current = Date.now();
+    reported.current = false;
+    completed.current = false;
   }, [deal]);
+
+  const reportComplete = useCallback(
+    (finishedAnswers: readonly Answer[]) => {
+      if (completed.current || finishedAnswers.length === 0) return;
+      completed.current = true;
+      const counted = finishedAnswers.filter((answer) => !answer.peeked);
+      if (counted.length === 0) return;
+      const durationMs = counted.reduce((total, answer) => total + answer.durationMs, 0);
+      onComplete?.({
+        score:
+          (counted.filter(isRight).length / counted.length) * 100,
+        durationMs,
+        answers: counted.length,
+        hands: counted.map((answer) => ({
+          hand: answer.spot.hand,
+          chosenAction: answer.chosen,
+          expectedAction: answer.expected,
+          grade: answer.grade,
+          score: answer.score,
+          strategyFreq: answer.strategyFreq,
+          evLossBb: answer.evLossBb,
+          rngRoll: answer.spot.roll,
+          durationMs: answer.durationMs,
+        })),
+      });
+    },
+    [onComplete],
+  );
 
   const advance = useCallback(() => {
     if (advanceTimer.current) clearTimeout(advanceTimer.current);
@@ -285,6 +353,16 @@ export function QuickfireDrill({
     // on purpose: the correction has been sitting on screen waiting to be read,
     // and you decide when you have read it.
     if (current && !current.peeked && !isRight(current)) {
+      if (continueAfterMiss) {
+        setCurrent(null);
+        setStreak(0);
+        setPeeked(false);
+        setChartOpen(false);
+        setIndex((i) => i + 1);
+        startedAt.current = Date.now();
+        return;
+      }
+      reportComplete(answers);
       setCurrent(null);
       setStopped(true);
       void flush();
@@ -296,7 +374,7 @@ export function QuickfireDrill({
     setChartOpen(false);
     setIndex((i) => i + 1);
     startedAt.current = Date.now();
-  }, [current, flush]);
+  }, [answers, continueAfterMiss, current, flush, reportComplete]);
 
   const stop = useCallback(() => {
     if (advanceTimer.current) clearTimeout(advanceTimer.current);
@@ -304,8 +382,9 @@ export function QuickfireDrill({
     setStopped(true);
     // Walking away with a streak still standing still earns the streak.
     if (streak > best) writeBest(streak);
+    reportComplete(answers);
     void flush();
-  }, [best, flush, streak]);
+  }, [answers, best, flush, reportComplete, streak]);
 
   /** Open the chart, and mark this spot as not counting. */
   const peek = useCallback(() => {
@@ -349,7 +428,27 @@ export function QuickfireDrill({
       if (peeked) return;
 
       if (isRight(result)) {
-        setStreak((n) => n + 1);
+        const nextStreak = streak + 1;
+        setStreak(nextStreak);
+        if (
+          completionStreak !== undefined &&
+          nextStreak >= completionStreak &&
+          !reported.current
+        ) {
+          reported.current = true;
+          onMastery?.({
+            score: 100,
+            durationMs: answers.length === 0 ? result.durationMs : answers.reduce((sum, item) => sum + item.durationMs, 0) + result.durationMs,
+            answers: answers.length + 1,
+          });
+          reportComplete([...answers, result]);
+          advanceTimer.current = setTimeout(() => {
+            setCurrent(null);
+            setStopped(true);
+            void flush();
+          }, FEEDBACK_MS);
+          return;
+        }
         // A right answer rolls on by itself; a wrong one waits for you.
         advanceTimer.current = setTimeout(advance, FEEDBACK_MS);
         return;
@@ -368,10 +467,14 @@ export function QuickfireDrill({
       deal,
       flush,
       index,
+      completionStreak,
+      onMastery,
       peeked,
       spot,
       spots.length,
       streak,
+      answers,
+      reportComplete,
     ],
   );
 
@@ -441,7 +544,7 @@ export function QuickfireDrill({
         best={best}
         streak={streak}
         onRestart={restart}
-        saveState={signedIn ? saveState : "signed-out"}
+        saveState={persistReviews ? (signedIn ? saveState : "signed-out") : undefined}
       />
     );
   }
@@ -503,13 +606,16 @@ export function QuickfireDrill({
         <div className="mt-5 text-center">
           <p className="text-sm">
             <span className="font-mono font-semibold">{spot.hand}</span>{" "}
-            <span className="text-zinc-500 dark:text-zinc-400">
-              from the {spot.node.key.position} —
-            </span>{" "}
+            <span className="text-zinc-500 dark:text-zinc-400">—</span>{" "}
             <span className="font-medium text-emerald-600 dark:text-emerald-400">
               {current.expected}
             </span>
           </p>
+          {correction?.(spot, current.expected) && (
+            <p className="mx-auto mt-2 max-w-md text-xs leading-relaxed text-zinc-500 dark:text-zinc-400">
+              {correction(spot, current.expected)}
+            </p>
+          )}
           {/* Not "Next": a wrong answer ends the run, and a button that says
               otherwise would make the streak look like it had been lost to a
               bug rather than to this hand. */}
@@ -517,7 +623,7 @@ export function QuickfireDrill({
             onClick={advance}
             className="mt-2 text-xs text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300"
           >
-            {current.peeked ? "Next" : "That ends the streak"} →{" "}
+            {current.peeked || continueAfterMiss ? "Keep going" : "That ends the streak"} →{" "}
             <span className="opacity-60">or press space</span>
           </button>
         </div>
@@ -631,7 +737,7 @@ function Review({
   /** The run's final streak — the score, and the only number that carries. */
   streak: number;
   onRestart: () => void;
-  saveState: SaveState;
+  saveState?: SaveState;
 }) {
   const wrong = answers.filter((a) => !isRight(a));
   const peeked = answers.filter((a) => a.peeked).length;
@@ -650,8 +756,9 @@ function Review({
             {streak >= best ? "That is your best." : `Best ${best}.`}
           </p>
         )}
-        <p className="mt-2 text-xs text-zinc-400 dark:text-zinc-500">
-          {saveState === "signed-out" ? (
+        {saveState && (
+          <p className="mt-2 text-xs text-zinc-400 dark:text-zinc-500">
+            {saveState === "signed-out" ? (
             <>
               {SAVE_COPY[saveState]}{" "}
               <Link href="/login" className="underline">
@@ -661,7 +768,8 @@ function Review({
           ) : (
             SAVE_COPY[saveState]
           )}
-        </p>
+          </p>
+        )}
       </div>
 
       <button

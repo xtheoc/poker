@@ -24,6 +24,12 @@ import { type ChartSet, findNode, nodeId } from "./poker/charts";
 import type { ActionGrade } from "./poker/grading";
 import type { Hand } from "./poker/hands";
 import type { SessionHand } from "./sessions";
+import type { Strategy } from "./strategies";
+import {
+  reviewHandForStrategy,
+  saveStrategyHandReviews,
+  type StoredStrategyHand,
+} from "./strategies/hand-review";
 
 /** Rows per round trip. Large enough to be fast, small enough to stay clear. */
 const BATCH = 200;
@@ -84,6 +90,17 @@ export interface ImportSummary {
   mistakes: number;
   /** The newest hand in this import, so the caller can link to its sitting. */
   latestHandId: string | null;
+  /** Hands also reviewed under one of the supplied strategies. */
+  strategyReviewed: number;
+}
+
+export interface ImportOptions {
+  /**
+   * Strategies whose filters should automatically claim and review matching
+   * hands. Omitted by the legacy generic re-grader, which only touches its
+   * existing workspace verdicts.
+   */
+  strategies?: readonly Strategy[];
 }
 
 interface HandRow {
@@ -113,6 +130,7 @@ export async function importHands(
   userId: string,
   text: string,
   set: ChartSet,
+  options: ImportOptions = {},
 ): Promise<ImportSummary> {
   const { hands, errors } = parseFile(text);
   const tree = { treeId: set.treeId, chartStackBb: set.stackBb };
@@ -151,6 +169,7 @@ export async function importHands(
       charted: 0,
       mistakes: 0,
       latestHandId: null,
+      strategyReviewed: 0,
     };
   }
 
@@ -175,6 +194,25 @@ export async function importHands(
 
   await replaceViolations(supabase, userId, stored, violationsByHandId, set);
 
+  const storedByPokerStarsId = new Map(
+    stored.map((row) => [row.ps_hand_id, { id: row.id, psHandId: row.ps_hand_id }]),
+  );
+  const strategyReviews = hands.flatMap((hand) => {
+    const strategyHand = storedByPokerStarsId.get(hand.id);
+    if (!strategyHand) return [];
+
+    return (options.strategies ?? [])
+      .map((strategy) =>
+        reviewHandForStrategy(
+          hand,
+          strategyHand as StoredStrategyHand,
+          strategy,
+        ),
+      )
+      .filter((review): review is NonNullable<typeof review> => review !== null);
+  });
+  await saveStrategyHandReviews(supabase, userId, strategyReviews);
+
   const newest = hands.reduce<ParsedHand | null>(
     (latest, hand) => (!latest || hand.playedAt > latest.playedAt ? hand : latest),
     null,
@@ -188,6 +226,7 @@ export async function importHands(
     charted,
     mistakes,
     latestHandId: newest?.id ?? null,
+    strategyReviewed: strategyReviews.length,
   };
 }
 
@@ -544,6 +583,7 @@ export async function regradeHands(
   supabase: SupabaseClient,
   userId: string,
   set: ChartSet,
+  options: ImportOptions = {},
 ): Promise<RegradeSummary> {
   const summary: RegradeSummary = { hands: 0, charted: 0, mistakes: 0 };
 
@@ -567,6 +607,7 @@ export async function regradeHands(
       userId,
       page.map((row) => row.raw.trim()).join("\n\n"),
       set,
+      options,
     );
 
     summary.hands += result.stored;

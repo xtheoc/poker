@@ -3,6 +3,11 @@ import { NextResponse } from "next/server";
 import { MissingTableError, regradeHands } from "@/lib/hands-store";
 import { BEGINNER_6MAX } from "@/lib/poker/charts/beginner-6max";
 import { optionalUser } from "@/lib/session";
+import { getAllStrategies } from "@/lib/strategies";
+import {
+  MissingStrategyDecisionTablesError,
+  MissingStrategyReviewTablesError,
+} from "@/lib/strategies/hand-review";
 
 /**
  * Re-grade every stored hand against the chart set the server is running now.
@@ -32,12 +37,17 @@ export async function POST() {
       session.supabase,
       session.userId,
       BEGINNER_6MAX,
+      { strategies: getAllStrategies() },
     );
 
     // Accuracy, leaks, the trend and the nav dot all move at once.
     revalidatePath("/hands");
     revalidatePath("/drill");
     revalidatePath("/settings");
+    for (const strategy of getAllStrategies()) {
+      revalidatePath(`/strategies/${strategy.id}`);
+      revalidatePath(`/strategies/${strategy.id}/hands`);
+    }
 
     return NextResponse.json(summary);
   } catch (error) {
@@ -46,6 +56,24 @@ export async function POST() {
         {
           error:
             "The hand tables do not exist yet. Run supabase/migrations/0003_hands.sql, then try again.",
+        },
+        { status: 503 },
+      );
+    }
+    if (error instanceof MissingStrategyReviewTablesError) {
+      return NextResponse.json(
+        {
+          error:
+            "Run supabase/migrations/0010_strategy_hand_reviews.sql, then re-grade again.",
+        },
+        { status: 503 },
+      );
+    }
+    if (error instanceof MissingStrategyDecisionTablesError) {
+      return NextResponse.json(
+        {
+          error:
+            "Run supabase/migrations/0011_strategy_decisions.sql, then re-grade again.",
         },
         { status: 503 },
       );

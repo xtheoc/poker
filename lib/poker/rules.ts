@@ -68,6 +68,8 @@ export interface RuleSpot {
   villainType?: PlayerType;
   /** A recreational player has already put money in. */
   fishInPot?: boolean;
+  /** Cold callers between the opener and the hero in a squeeze spot. */
+  callers?: number;
   /** Folds to 3-bets or cbets more than 70% of the time, over 100+ hands. */
   foldsTooMuch?: boolean;
 }
@@ -164,6 +166,7 @@ function spotAt(key: NodeKey, hand: Hand): RuleSpot {
     villain: key.villain,
     hand,
     stackBb: key.stackBb,
+    callers: key.callers?.length,
     // With nobody to be out of position against, position is moot; true is the
     // reading that never suppresses a rule.
     inPosition:

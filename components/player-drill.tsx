@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState, useSyncExternalStore } from "react";
+import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { HudPanel } from "@/components/hud-panel";
 import { HudReference } from "@/components/hud-reference";
 import { type HudRead, dealHud } from "@/lib/hud/deal";
@@ -97,6 +97,8 @@ function difficultyAt(streak: number): number {
 export function PlayerDrill({
   initial,
   format = "6max",
+  masteryStreak,
+  onMastery,
 }: {
   /**
    * The first read, dealt on the server.
@@ -107,6 +109,9 @@ export function PlayerDrill({
    */
   initial: HudRead;
   format?: TableFormat;
+  /** Optional lesson gate. Omitted for the free-play drill. */
+  masteryStreak?: number;
+  onMastery?: (result: { score: number; durationMs: number; answers: number }) => void;
 }) {
   const [read, setRead] = useState<HudRead>(initial);
   const [answer, setAnswer] = useState<PlayerTypeId | null>(null);
@@ -114,7 +119,11 @@ export function PlayerDrill({
   const [lost, setLost] = useState<number | null>(null);
   // Free to open, unlike the preflop chart. See `HudReference` for why.
   const [showRef, setShowRef] = useState(false);
+  const [mastered, setMastered] = useState(false);
   const best = useSyncExternalStore(subscribeBest, readBest, serverBest);
+  const startedAt = useRef<number | null>(null);
+  const answers = useRef(0);
+  const reported = useRef(false);
 
   const right = answer !== null && answer === read.type;
 
@@ -129,6 +138,8 @@ export function PlayerDrill({
   const guess = useCallback(
     (id: PlayerTypeId) => {
       if (answer) return;
+      if (startedAt.current === null) startedAt.current = Date.now();
+      answers.current++;
       setAnswer(id);
 
       if (id === read.type) {
@@ -136,12 +147,21 @@ export function PlayerDrill({
         setStreak(going);
         if (going > best) writeBest(going);
         setLost(null);
+        if (masteryStreak !== undefined && going >= masteryStreak && !reported.current) {
+          reported.current = true;
+          setMastered(true);
+          onMastery?.({
+            score: 100,
+            durationMs: Date.now() - (startedAt.current ?? Date.now()),
+            answers: answers.current,
+          });
+        }
       } else {
         setLost(streak > 0 ? streak : null);
         setStreak(0);
       }
     },
-    [answer, best, read.type, streak],
+    [answer, best, masteryStreak, onMastery, read.type, streak],
   );
 
   // The streak the *next* deal will be pitched against. Read from state rather
@@ -154,6 +174,7 @@ export function PlayerDrill({
 
       // Any answer key moves on once the verdict is up, so a fast player is
       // never held behind an explanation they have already read.
+      if (mastered) return;
       if (answer) {
         if (KEYS.includes(key) || key === " " || key === "Enter") {
           event.preventDefault();
@@ -170,7 +191,35 @@ export function PlayerDrill({
 
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [advance, answer, guess]);
+  }, [advance, answer, guess, mastered]);
+
+  const restart = useCallback(() => {
+    setRead(dealHud({ format, difficulty: 0 }));
+    setAnswer(null);
+    setStreak(0);
+    setLost(null);
+    setMastered(false);
+    startedAt.current = null;
+    answers.current = 0;
+    reported.current = false;
+  }, [format]);
+
+  if (mastered) {
+    return (
+      <div className="flex w-full flex-col items-center text-center">
+        <p className="text-5xl font-semibold tabular-nums">{streak}</p>
+        <p className="mt-2 text-sm text-zinc-500 dark:text-zinc-400">
+          correct player reads in a row
+        </p>
+        <button
+          onClick={restart}
+          className="mt-8 w-full max-w-xs rounded-xl bg-zinc-900 py-3 text-sm font-medium text-white dark:bg-white dark:text-zinc-900"
+        >
+          Again
+        </button>
+      </div>
+    );
+  }
 
   const thin = visibleStats(read.hands).length <= 2;
   const blinded = blindedAt(streak);

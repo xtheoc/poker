@@ -8,7 +8,7 @@ import {
   useState,
   useSyncExternalStore,
 } from "react";
-import type { ChartSet } from "@/lib/poker/charts";
+import type { ChartNode, ChartSet } from "@/lib/poker/charts";
 import { type Hand, handGrid } from "@/lib/poker/hands";
 import { describeSpot } from "@/lib/poker/quickfire";
 import {
@@ -102,10 +102,19 @@ interface Stroke {
   erase: boolean;
 }
 
-export function RangeDrill({ chartSet }: { chartSet: ChartSet }) {
+export function RangeDrill({
+  chartSet,
+  nodes,
+  onMastery,
+}: {
+  chartSet: ChartSet;
+  /** A lesson can practise a deliberate subset rather than every chart node. */
+  nodes?: readonly ChartNode[];
+  onMastery?: (result: { score: number; durationMs: number; answers: number }) => void;
+}) {
   const seats = useMemo(
-    () => chartSet.nodes.filter((node) => !node.key.villain),
-    [chartSet],
+    () => nodes ?? chartSet.nodes.filter((node) => !node.key.villain),
+    [chartSet, nodes],
   );
 
   const [index, setIndex] = useState(0);
@@ -224,7 +233,8 @@ export function RangeDrill({ chartSet }: { chartSet: ChartSet }) {
     const took = startedAt === null ? 0 : Date.now() - startedAt;
     setFinishedIn(took);
     if (best === 0 || took < best) writeBest(took);
-  }, [best, index, result, seats.length, startedAt]);
+    onMastery?.({ score: 100, durationMs: took, answers: seats.length });
+  }, [best, index, onMastery, result, seats.length, startedAt]);
 
   const restart = useCallback(() => {
     setIndex(0);

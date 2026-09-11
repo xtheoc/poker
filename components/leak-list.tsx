@@ -24,18 +24,27 @@ export function LeakList({
   leaks,
   violations,
   limit = 8,
+  drillHref,
 }: {
   leaks: readonly Leak[];
   violations: readonly Violation[];
   /** Evidence hands shown before collapsing to a count. */
   limit?: number;
+  /** Optional strategy-local practice destination for a leak. */
+  drillHref?: (leak: Leak) => string;
 }) {
   if (leaks.length === 0) return null;
 
   return (
     <div className="space-y-2">
       {leaks.map((leak) => (
-        <LeakCard key={leak.id} leak={leak} violations={violations} limit={limit} />
+        <LeakCard
+          key={leak.id}
+          leak={leak}
+          violations={violations}
+          limit={limit}
+          drillHref={drillHref?.(leak)}
+        />
       ))}
     </div>
   );
@@ -45,10 +54,12 @@ function LeakCard({
   leak,
   violations,
   limit,
+  drillHref,
 }: {
   leak: Leak;
   violations: readonly Violation[];
   limit: number;
+  drillHref?: string;
 }) {
   const evidence = violations.filter(
     (v) => v.nodeId === leak.nodeId && v.kind === leak.kind,
@@ -81,7 +92,7 @@ function LeakCard({
             `#`, which a browser would otherwise read as a fragment and never
             send to the server. */}
         <Link
-          href={`/drill?leak=${encodeURIComponent(leak.id)}`}
+          href={drillHref ?? `/drill?leak=${encodeURIComponent(leak.id)}`}
           className="inline-block rounded-lg border border-zinc-200 px-3 py-1 text-xs font-medium hover:bg-zinc-50 dark:border-zinc-700 dark:hover:bg-zinc-900"
         >
           Drill this spot →

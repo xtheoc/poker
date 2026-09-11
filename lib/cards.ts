@@ -68,7 +68,8 @@ export function toCard(row: CardRow): Card {
 }
 
 /** Scheduler state as columns. */
-function toColumns(card: Card) {
+/** Scheduler columns shared by every card kind. */
+export function cardColumns(card: Card) {
   return {
     due: card.due.toISOString(),
     stability: card.stability,
@@ -108,7 +109,7 @@ export async function ensureNodeCards(
       position: node.key.position,
       villain: node.key.villain ?? null,
     },
-    ...toColumns(newCard()),
+    ...cardColumns(newCard()),
   }));
 
   await supabase.from("srs_card").upsert(rows, {
@@ -200,7 +201,7 @@ export async function recordReview(
 
   const { error: updateError } = await supabase
     .from("srs_card")
-    .update(toColumns(after))
+    .update(cardColumns(after))
     .eq("id", row.id)
     .eq("user_id", userId);
 

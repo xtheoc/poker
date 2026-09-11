@@ -44,6 +44,28 @@ const VALUE_3BET: ReadonlySet<Hand> = new Set<Hand>([
 ]);
 
 /**
+ * A squeeze is still a three-bet, but the caller's dead money makes the value
+ * case clearer. The baseline deliberately stays identical to the ordinary
+ * value three-bet range. That is the source's actual instruction at micros:
+ * only three-bet for value, with QQ+ and AK. It is not a licence to turn every
+ * suited connector into a squeeze just because somebody called.
+ */
+const VALUE_SQUEEZE: ReadonlySet<Hand> = new Set<Hand>([
+  "AA",
+  "KK",
+  "QQ",
+  "AKs",
+  "AKo",
+]);
+
+/**
+ * The one additional squeeze the author demonstrates exactly: JJ in the BB
+ * over an early open and two callers. Keep the condition exact. The article
+ * proves this example, not a position-free rule that JJ is always a squeeze.
+ */
+const BB_JJ_WITH_TWO_CALLERS = "JJ";
+
+/**
  * Plenty of value, and still cannot stand a 4-bet.
  *
  * The book is explicit that these are calls rather than 3-bets: they fold badly
@@ -137,6 +159,51 @@ export const VS_OPEN_RULES: readonly Rule[] = [
     scenario: "vs-rfi",
     cite: "Preflop — 'your default is 3-bet or fold, and usually fold'",
     summary: "Fold. Facing a raise this is the answer far more often than not.",
+    when: () => true,
+    then: "fold",
+  },
+];
+
+/**
+ * Squeezing an open and one or more callers at NL2.
+ *
+ * Sources:
+ * - Nathan Williams, "Why You Need to Make the Squeeze Play More Often at
+ *   Lower Stakes" (PokerNews, 2018): defines the line as open + caller(s) +
+ *   reraise and shows BB JJ over an early open and two callers.
+ * - Williams' CTM preflop baseline: three-bet for value; QQ+ and AK.
+ *
+ * Light squeezes depend on how often the opener and callers fold. A PokerStars
+ * history does not prove those reads, so they intentionally do not appear in
+ * this ruleset and are never auto-graded.
+ */
+export const SQUEEZE_RULES: readonly Rule[] = [
+  {
+    id: "squeeze/bb-jj-two-callers",
+    scenario: "squeeze",
+    cite: "BlackRain79 — BB JJ squeeze over an early open and two callers",
+    summary:
+      "From the big blind, squeeze JJ when an early open already has two callers.",
+    when: (spot) =>
+      spot.position === "BB" &&
+      spot.hand === BB_JJ_WITH_TWO_CALLERS &&
+      spot.callers === 2,
+    then: "raise",
+  },
+  {
+    id: "squeeze/value",
+    scenario: "squeeze",
+    cite: "Preflop — three-bet for value at microstakes",
+    summary:
+      "Squeeze QQ+ and AK for value. The callers add dead money; they do not widen this default range.",
+    when: (spot) => VALUE_SQUEEZE.has(spot.hand),
+    then: "raise",
+  },
+  {
+    id: "squeeze/fold",
+    scenario: "squeeze",
+    cite: "Preflop — value first; read-dependent light squeezes are not automatic",
+    summary: "Fold by default. A light squeeze needs verified fold equity, which this baseline does not assume.",
     when: () => true,
     then: "fold",
   },
