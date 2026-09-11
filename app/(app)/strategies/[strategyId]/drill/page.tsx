@@ -2,6 +2,10 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { MigrationNotice } from "@/components/migration-notice";
 import { StrategyPreflopDrill } from "@/components/strategy-preflop-drill";
+import {
+  StrategyPracticeCircuit,
+  type CircuitDrillId,
+} from "@/components/strategy-practice-circuit";
 import { StrategyNav } from "@/components/strategy-nav";
 import { QuickfireDrill } from "@/components/quickfire-drill";
 import { dealHud } from "@/lib/hud/deal";
@@ -20,7 +24,18 @@ import { strategyProgressPageData } from "@/lib/strategies/progress-server";
 import { cycleLeakSpots } from "@/lib/poker/leak-drill";
 import { optionalUser } from "@/lib/session";
 
-const PREFLOP_DRILLS = new Set([
+const SUPPORTED_DRILLS = new Set([
+  "player-types",
+  "open-ranges",
+  "open-sizing",
+  "facing-open",
+  "squeeze",
+  "facing-3bet",
+  "facing-4bet",
+  "flop-plan",
+]);
+
+const PREFLOP_DRILLS = new Set<CircuitDrillId>([
   "player-types",
   "open-ranges",
   "open-sizing",
@@ -61,7 +76,7 @@ export default async function StrategyDrillPage({
   searchParams,
 }: PageProps<"/strategies/[strategyId]/drill">) {
   const { strategyId } = await params;
-  const { lesson: requestedLesson, mistakes } = await searchParams;
+  const { lesson: requestedLesson, mistakes, exercise } = await searchParams;
   const strategy = getLearningStrategy(strategyId);
   if (!strategy) notFound();
 
@@ -162,7 +177,7 @@ export default async function StrategyDrillPage({
     if (item.state === "locked") return [];
     const requirement = item.lesson.mastery.find(
       (candidate): candidate is Extract<typeof candidate, { kind: "drill" }> =>
-        candidate.kind === "drill" && PREFLOP_DRILLS.has(candidate.drillId),
+        candidate.kind === "drill" && SUPPORTED_DRILLS.has(candidate.drillId),
     );
     if (!requirement) return [];
     const drill = strategy.learning.drills.find(
@@ -170,6 +185,38 @@ export default async function StrategyDrillPage({
     );
     return drill ? [{ item, requirement, drill }] : [];
   });
+
+  const circuitDrills = availableDrills.map(({ drill }) => drill.id as CircuitDrillId);
+  const preflopCircuit = circuitDrills.filter((drill) => PREFLOP_DRILLS.has(drill));
+
+  if (typeof exercise === "string") {
+    const drills = exercise === "preflop" ? preflopCircuit : circuitDrills;
+    if (drills.length > 0) {
+      const rangeNodes = strategy.chartSet.nodes.filter(
+        (node) => node.key.scenario === "rfi" && node.key.position !== "BB",
+      );
+      return (
+        <main className="mx-auto w-full max-w-3xl px-5 py-8 sm:px-8 sm:py-10">
+          <StrategyNav strategyId={strategy.id} strategyName={strategy.name} />
+          <div className="mt-10">
+            <StrategyPracticeCircuit
+              chartSet={strategy.chartSet}
+              drills={drills}
+              initialHud={dealHud()}
+              rangeNodes={rangeNodes}
+              initialSizing={dealCtmSizingSession(15)}
+              contextual={{
+                "facing-open": dealContextualPreflopSession(24, "vs-rfi"),
+                squeeze: dealContextualPreflopSession(24, "squeeze"),
+                "facing-3bet": dealContextualPreflopSession(24, "vs-3bet"),
+                "facing-4bet": dealContextualPreflopSession(24, "vs-4bet"),
+              }}
+            />
+          </div>
+        </main>
+      );
+    }
+  }
 
   if (requestedLesson === undefined && availableDrills.length > 0) {
     return (
@@ -180,13 +227,25 @@ export default async function StrategyDrillPage({
             Practice
           </p>
           <h1 className="mt-2 text-4xl font-semibold tracking-tight">Drills</h1>
-          <p className="mt-3 text-sm leading-relaxed text-zinc-500 dark:text-zinc-400">
-            Every opened lesson stays here for practice. Only a clean run on
-            the current lesson advances the course.
-          </p>
+          <p className="mt-3 text-sm leading-relaxed text-zinc-500 dark:text-zinc-400">Run the whole sequence, or train one skill in isolation.</p>
         </div>
 
-        <div className="mt-10 divide-y divide-zinc-200 border-y border-zinc-200 dark:divide-zinc-800 dark:border-zinc-800">
+        <div className="mt-10 grid gap-3 sm:grid-cols-2">
+          {preflopCircuit.length > 0 && (
+            <Link href={`/strategies/${strategy.id}/drill?exercise=preflop`} className="rounded-lg border border-zinc-200 bg-zinc-50/70 p-5 transition hover:border-zinc-400 dark:border-zinc-800 dark:bg-zinc-900/30 dark:hover:border-zinc-600">
+              <p className="font-medium">Pre-flop exercise</p>
+              <p className="mt-2 text-sm leading-6 text-zinc-500 dark:text-zinc-400">Every opened pre-flop subject, one by one.</p>
+            </Link>
+          )}
+          {circuitDrills.length > preflopCircuit.length && (
+            <Link href={`/strategies/${strategy.id}/drill?exercise=all`} className="rounded-lg border border-zinc-200 bg-zinc-50/70 p-5 transition hover:border-zinc-400 dark:border-zinc-800 dark:bg-zinc-900/30 dark:hover:border-zinc-600">
+              <p className="font-medium">Everything unlocked</p>
+              <p className="mt-2 text-sm leading-6 text-zinc-500 dark:text-zinc-400">Run pre-flop, then every unlocked post-flop subject.</p>
+            </Link>
+          )}
+        </div>
+
+        <div className="mt-8 divide-y divide-zinc-200 border-y border-zinc-200 dark:divide-zinc-800 dark:border-zinc-800">
           {mistakeTargets.length > 0 && (
             <Link
               href={`/strategies/${strategy.id}/drill?mistakes=1`}
@@ -261,7 +320,7 @@ export default async function StrategyDrillPage({
 
   const requirement = active.lesson.mastery.find(
     (item): item is Extract<typeof item, { kind: "drill" }> =>
-      item.kind === "drill" && PREFLOP_DRILLS.has(item.drillId),
+      item.kind === "drill" && SUPPORTED_DRILLS.has(item.drillId),
   );
   if (!requirement) {
     return (

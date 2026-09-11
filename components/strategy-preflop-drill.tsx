@@ -5,6 +5,7 @@ import { useCallback, useState } from "react";
 import { ArrowRight, Check } from "lucide-react";
 import { ContextualPreflopDrill } from "@/components/contextual-preflop-drill";
 import { CtmSizingDrill } from "@/components/ctm-sizing-drill";
+import { FlopPlanDrill } from "@/components/flop-plan-drill";
 import { PlayerDrill } from "@/components/player-drill";
 import { RangeDrill } from "@/components/range-drill";
 import type { HudRead } from "@/lib/hud/deal";
@@ -128,6 +129,7 @@ export function StrategyPreflopDrill({
           onMastery={save}
         />
       )}
+      {drillId === "flop-plan" && <FlopPlanDrill onComplete={save} />}
       {(state === "saving" || state === "retry" || state === "failed") && (
         <p
           className={`mt-8 text-center text-sm ${
