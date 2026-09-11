@@ -10,7 +10,12 @@
 
 import { cardsFor, type Card } from "../poker/cards";
 import {
+  FOUR_BET,
+  THREE_BET_IP,
+  THREE_BET_OOP,
+  openSizeBb,
   type ActionKind,
+  type ChartSet,
   isInPosition,
   nodeId,
   type ChartNode,
@@ -39,12 +44,14 @@ type ContextTemplate = Omit<RuleSpot, "inPosition" | "callers"> & {
 /** The decision branch a table spot belongs to. Kept as data so the drill can
  * rotate branches without giving away the answer in advance. */
 export type ContextualDecisionFamily =
+  | "open"
   | "facing-open"
   | "squeeze"
   | "facing-3bet"
   | "facing-4bet";
 
 const FAMILY_FOR_SCENARIO: Partial<Record<RuleSpot["scenario"], ContextualDecisionFamily>> = {
+  rfi: "open",
   "vs-rfi": "facing-open",
   squeeze: "squeeze",
   "vs-3bet": "facing-3bet",
@@ -52,11 +59,46 @@ const FAMILY_FOR_SCENARIO: Partial<Record<RuleSpot["scenario"], ContextualDecisi
 };
 
 export const CONTEXTUAL_FAMILY_LABELS: Record<ContextualDecisionFamily, string> = {
+  open: "Unopened pot",
   "facing-open": "Facing an open",
   squeeze: "Open + caller",
   "facing-3bet": "Facing a 3-bet",
   "facing-4bet": "Facing a 4-bet",
 };
+
+/**
+ * The amount for a raise in a contextual spot, in big blinds.
+ *
+ * A four-bet response is a stack-off decision at this level, so it returns
+ * null rather than pretending a slider can price an all-in. Every other
+ * amount is derived from the same tree used to put chips on the table.
+ */
+export function contextualRaiseSizeBb(
+  spot: ContextualPreflopSpot,
+  set: ChartSet,
+): number | null {
+  const { scenario, position, villain } = spot.node.key;
+  if (scenario === "rfi") return openSizeBb(set, position);
+  if (!villain || scenario === "vs-4bet") return null;
+
+  const open = openSizeBb(set, scenario === "vs-3bet" ? position : villain);
+  if (scenario === "vs-rfi") {
+    return roundBb(open * (spot.spot.inPosition ? THREE_BET_IP : THREE_BET_OOP));
+  }
+  if (scenario === "squeeze") {
+    const callers = spot.node.key.callers?.length ?? 0;
+    return roundBb(open * (spot.spot.inPosition ? THREE_BET_IP : THREE_BET_OOP) + callers);
+  }
+  if (scenario === "vs-3bet") {
+    const villainThreeBet = open * (spot.spot.inPosition ? THREE_BET_OOP : THREE_BET_IP);
+    return roundBb(villainThreeBet * FOUR_BET);
+  }
+  return null;
+}
+
+function roundBb(value: number): number {
+  return Math.round(value * 2) / 2;
+}
 
 /** Every template is a source rule and one useful contrast to that rule. */
 const TEMPLATES: readonly ContextTemplate[] = [
@@ -160,6 +202,26 @@ const TEMPLATES: readonly ContextTemplate[] = [
   },
 ];
 
+/** Unopened-pot decisions belong in general practice, even though their range
+ * drill has a different answer format. These hands are taken from the active
+ * NL2 chart: the sizing slider then tests the 4bb/3bb ladder. */
+type OpeningTemplate = {
+  id: string;
+  position: Position;
+  hand: RuleSpot["hand"];
+  expected: "raise" | "fold";
+  summary: string;
+};
+
+const OPENING_TEMPLATES: readonly OpeningTemplate[] = [
+  { id: "open-utg-value", position: "UTG", hand: "AKo", expected: "raise", summary: "Open this hand from early position." },
+  { id: "open-utg-fold", position: "UTG", hand: "76s", expected: "fold", summary: "Fold this hand from early position." },
+  { id: "open-hj-value", position: "HJ", hand: "KJo", expected: "raise", summary: "Open this hand from middle position." },
+  { id: "open-co-value", position: "CO", hand: "A5o", expected: "raise", summary: "Open this hand from late position." },
+  { id: "open-btn-value", position: "BTN", hand: "Q7s", expected: "raise", summary: "Open this hand on the button." },
+  { id: "open-sb-fold", position: "SB", hand: "J7o", expected: "fold", summary: "Fold this hand from the small blind." },
+];
+
 export interface ContextualPreflopSpot {
   id: string;
   family: ContextualDecisionFamily;
@@ -220,6 +282,39 @@ function makeSpot(template: ContextTemplate, rng: () => number): ContextualPrefl
   };
 }
 
+function makeOpeningSpot(template: OpeningTemplate, rng: () => number): ContextualPreflopSpot {
+  const spot: RuleSpot = {
+    scenario: "rfi",
+    position: template.position,
+    hand: template.hand,
+    stackBb: 100,
+    inPosition: true,
+  };
+  const node: ChartNode = {
+    key: {
+      scenario: "rfi",
+      position: template.position,
+      stackBb: spot.stackBb,
+      treeId: "ctm-nl2-contextual",
+    },
+    strategies: template.expected === "raise"
+      ? { [template.hand]: { raise: { freq: 1 } } }
+      : {},
+  };
+
+  return {
+    id: template.id,
+    family: "open",
+    node,
+    spot,
+    expected: template.expected,
+    ruleId: `open/${template.expected}`,
+    ruleSummary: template.summary,
+    cards: cardsFor(template.hand, rng),
+    playerTypes: {},
+  };
+}
+
 /** Build one named teaching situation, useful for tests and future review links. */
 export function contextualPreflopSpot(
   id: string,
@@ -269,12 +364,15 @@ export function dealMixedContextualPreflopSession(
   rng: () => number = Math.random,
 ): ContextualPreflopSpot[] {
   const families = Object.keys(CONTEXTUAL_FAMILY_LABELS) as ContextualDecisionFamily[];
-  const byFamily = new Map<ContextualDecisionFamily, readonly ContextTemplate[]>(
+  const contextualByFamily = new Map<ContextualDecisionFamily, readonly ContextTemplate[]>(
     families.map((family) => [
       family,
       TEMPLATES.filter((template) => FAMILY_FOR_SCENARIO[template.scenario] === family),
     ]),
   );
+  const openingByFamily = new Map<ContextualDecisionFamily, readonly OpeningTemplate[]>([
+    ["open", OPENING_TEMPLATES],
+  ]);
   const spots: ContextualPreflopSpot[] = [];
   let previous: string | undefined;
 
@@ -287,13 +385,18 @@ export function dealMixedContextualPreflopSession(
 
     for (const family of order) {
       if (spots.length >= count) break;
-      const templates = byFamily.get(family);
-      if (!templates?.length) throw new Error(`No contextual templates for ${family}`);
-      let template = templates[Math.floor(rng() * templates.length)]!;
-      if (templates.length > 1 && template.id === previous) {
-        template = templates[(templates.indexOf(template) + 1) % templates.length]!;
+      const templates = contextualByFamily.get(family) ?? [];
+      const opening = openingByFamily.get(family) ?? [];
+      const candidates = [
+        ...templates.map((template) => ({ id: template.id, make: () => makeSpot(template, rng) })),
+        ...opening.map((template) => ({ id: template.id, make: () => makeOpeningSpot(template, rng) })),
+      ];
+      if (!candidates.length) throw new Error(`No contextual templates for ${family}`);
+      let template = candidates[Math.floor(rng() * candidates.length)]!;
+      if (candidates.length > 1 && template.id === previous) {
+        template = candidates[(candidates.indexOf(template) + 1) % candidates.length]!;
       }
-      spots.push(makeSpot(template, rng));
+      spots.push(template.make());
       previous = template.id;
     }
   }

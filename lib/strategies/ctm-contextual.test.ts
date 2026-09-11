@@ -1,9 +1,11 @@
 import { describe, expect, it } from "vitest";
 import {
   contextualPreflopSpot,
+  contextualRaiseSizeBb,
   dealContextualPreflopSession,
   dealMixedContextualPreflopSession,
 } from "./ctm-contextual";
+import { CTM_NL2_CHART } from "./ctm-nl2";
 
 describe("CTM contextual preflop dealer", () => {
   it("deals complete source-backed spots without immediate repeats", () => {
@@ -39,11 +41,29 @@ describe("CTM contextual preflop dealer", () => {
   });
 
   it("mixes one table-decision branch at a time before repeating a branch", () => {
-    const spots = dealMixedContextualPreflopSession(12, () => 0.3);
+    const spots = dealMixedContextualPreflopSession(15, () => 0.3);
 
-    expect(spots).toHaveLength(12);
-    for (let index = 0; index < spots.length; index += 4) {
-      expect(new Set(spots.slice(index, index + 4).map((spot) => spot.family)).size).toBe(4);
+    expect(spots).toHaveLength(15);
+    for (let index = 0; index < spots.length; index += 5) {
+      expect(new Set(spots.slice(index, index + 5).map((spot) => spot.family)).size).toBe(5);
     }
+  });
+
+  it("uses the active big-blind sizing tree for opens, re-raises and squeezes", () => {
+    const open = dealMixedContextualPreflopSession(5, () => 0.3)
+      .find((spot) => spot.family === "open");
+    const facingOpen = contextualPreflopSpot("value-3bet", () => 0.2);
+    const squeeze = contextualPreflopSpot("squeeze-bb-jj-two-callers", () => 0.2);
+    const fourBet = contextualPreflopSpot("four-bet-value", () => 0.2);
+    const stackOff = contextualPreflopSpot("four-bet-continue", () => 0.2);
+
+    expect(open).toBeDefined();
+    expect(contextualRaiseSizeBb(open!, CTM_NL2_CHART)).toBe(
+      ["CO", "BTN"].includes(open!.spot.position) ? 3 : 4,
+    );
+    expect(contextualRaiseSizeBb(facingOpen, CTM_NL2_CHART)).toBe(9);
+    expect(contextualRaiseSizeBb(squeeze, CTM_NL2_CHART)).toBe(18);
+    expect(contextualRaiseSizeBb(fourBet, CTM_NL2_CHART)).toBe(22.5);
+    expect(contextualRaiseSizeBb(stackOff, CTM_NL2_CHART)).toBeNull();
   });
 });

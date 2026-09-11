@@ -241,7 +241,7 @@ function Chips({
             : "text-zinc-400 dark:text-zinc-500",
         )}
       >
-        {amount}
+        {amount}bb
       </span>
     </div>
   );

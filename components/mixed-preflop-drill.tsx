@@ -56,6 +56,7 @@ export function MixedPreflopDrill({
       completionStreak={10}
       onMastery={finish}
       showFamily
+      sizeRaises
     />
   );
 }

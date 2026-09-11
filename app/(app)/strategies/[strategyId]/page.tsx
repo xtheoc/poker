@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ArrowRight, BookOpen, Target } from "lucide-react";
+import { ArrowRight, BookOpen, ClipboardList, Hand, Target } from "lucide-react";
 import { MigrationNotice } from "@/components/migration-notice";
 import { StrategyNav } from "@/components/strategy-nav";
 import { getStrategy, isLearningStrategy } from "@/lib/strategies";
@@ -115,15 +115,25 @@ export default async function StrategyPage({
       </section>
 
       <div className="mt-10 grid gap-px border border-zinc-200 bg-zinc-200 sm:grid-cols-2 dark:border-zinc-800 dark:bg-zinc-800">
+        <Link href={`/strategies/${strategy.id}/learn`} className="group bg-white p-6 transition hover:bg-zinc-50 dark:bg-zinc-950 dark:hover:bg-zinc-900">
+          <BookOpen className="size-4 text-zinc-400" aria-hidden="true" />
+          <p className="mt-9 text-lg font-semibold">Learn</p>
+          <p className="mt-1 text-sm text-zinc-500 dark:text-zinc-400">Read the next rule, then unlock it with practice.</p>
+        </Link>
         <Link href={`/strategies/${strategy.id}/drill`} className="group bg-white p-6 transition hover:bg-zinc-50 dark:bg-zinc-950 dark:hover:bg-zinc-900">
           <Target className="size-4 text-zinc-400" aria-hidden="true" />
           <p className="mt-9 text-lg font-semibold">Drill</p>
           <p className="mt-1 text-sm text-zinc-500 dark:text-zinc-400">Practise the current subject until it is automatic.</p>
         </Link>
         <Link href={`/strategies/${strategy.id}/playbook`} className="group bg-white p-6 transition hover:bg-zinc-50 dark:bg-zinc-950 dark:hover:bg-zinc-900">
-          <BookOpen className="size-4 text-zinc-400" aria-hidden="true" />
+          <ClipboardList className="size-4 text-zinc-400" aria-hidden="true" />
           <p className="mt-9 text-lg font-semibold">Playbook</p>
           <p className="mt-1 text-sm text-zinc-500 dark:text-zinc-400">{map.filter((item) => item.state === "mastered").length} learned rules, ready to review.</p>
+        </Link>
+        <Link href={`/strategies/${strategy.id}/hands`} className="group bg-white p-6 transition hover:bg-zinc-50 dark:bg-zinc-950 dark:hover:bg-zinc-900">
+          <Hand className="size-4 text-zinc-400" aria-hidden="true" />
+          <p className="mt-9 text-lg font-semibold">Hands</p>
+          <p className="mt-1 text-sm text-zinc-500 dark:text-zinc-400">Review only hands that belong to this strategy.</p>
         </Link>
       </div>
 

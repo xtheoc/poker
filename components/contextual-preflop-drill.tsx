@@ -10,6 +10,7 @@ import {
 } from "@/lib/poker/charts";
 import {
   CONTEXTUAL_FAMILY_LABELS,
+  contextualRaiseSizeBb,
   type ContextualPreflopSpot,
   contextualRuleLabel,
 } from "@/lib/strategies/ctm-contextual";
@@ -23,6 +24,7 @@ export function ContextualPreflopDrill({
   completionStreak,
   onMastery,
   showFamily = false,
+  sizeRaises = false,
 }: {
   chartSet: ChartSet;
   initialSpots: readonly ContextualPreflopSpot[];
@@ -30,10 +32,15 @@ export function ContextualPreflopDrill({
   onMastery: (result: { score: number; durationMs: number; answers: number }) => void;
   /** General practice mixes branches, so identify the branch after each spot. */
   showFamily?: boolean;
+  /** A raise in free practice includes its source-derived size. */
+  sizeRaises?: boolean;
 }) {
   const [index, setIndex] = useState(0);
   const [streak, setStreak] = useState(0);
   const [answer, setAnswer] = useState<ActionKind | null>(null);
+  const [pendingRaise, setPendingRaise] = useState(false);
+  const [raiseSize, setRaiseSize] = useState(6);
+  const [sizingCorrect, setSizingCorrect] = useState<boolean | null>(null);
   const [finished, setFinished] = useState(false);
   const startedAt = useRef<number | null>(null);
   const answers = useRef(0);
@@ -42,17 +49,24 @@ export function ContextualPreflopDrill({
 
   const advance = useCallback(() => {
     setAnswer(null);
+    setPendingRaise(false);
+    setSizingCorrect(null);
     setIndex((value) => (value + 1) % initialSpots.length);
   }, [initialSpots.length]);
 
-  const choose = useCallback(
-    (chosen: ActionKind) => {
+  const expectedRaiseSize = spot ? contextualRaiseSizeBb(spot, chartSet) : null;
+  const requiresSize = sizeRaises && expectedRaiseSize !== null;
+
+  const grade = useCallback(
+    (chosen: ActionKind, chosenSize?: number) => {
       if (!spot || answer !== null || finished) return;
       if (startedAt.current === null) startedAt.current = Date.now();
       answers.current++;
       setAnswer(chosen);
+      const sizeRight = !requiresSize || chosen !== "raise" || chosenSize === expectedRaiseSize;
+      setSizingCorrect(sizeRight);
 
-      if (chosen !== spot.expected) {
+      if (chosen !== spot.expected || !sizeRight) {
         setStreak(0);
         return;
       }
@@ -70,12 +84,34 @@ export function ContextualPreflopDrill({
       }
       advanceTimer.current = setTimeout(advance, FEEDBACK_MS);
     },
-    [advance, answer, completionStreak, finished, onMastery, spot, streak],
+    [advance, answer, completionStreak, expectedRaiseSize, finished, onMastery, requiresSize, spot, streak],
   );
+
+  const choose = useCallback((chosen: ActionKind) => {
+    if (chosen === "raise" && requiresSize && spot?.expected === "raise") {
+      setPendingRaise(true);
+      setRaiseSize(6);
+      return;
+    }
+    grade(chosen);
+  }, [grade, requiresSize, spot?.expected]);
+
+  const submitRaise = useCallback(() => {
+    if (!pendingRaise) return;
+    setPendingRaise(false);
+    grade("raise", raiseSize);
+  }, [grade, pendingRaise, raiseSize]);
 
   useEffect(() => {
     function onKey(event: KeyboardEvent) {
       if (finished) return;
+      if (pendingRaise) {
+        if (["enter", " "].includes(event.key.toLowerCase())) {
+          event.preventDefault();
+          submitRaise();
+        }
+        return;
+      }
       if (answer) {
         if (["f", "c", "r", " ", "enter"].includes(event.key.toLowerCase())) {
           event.preventDefault();
@@ -91,7 +127,7 @@ export function ContextualPreflopDrill({
     }
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [advance, answer, choose, finished, spot?.expected]);
+  }, [advance, answer, choose, finished, pendingRaise, spot?.expected, submitRaise]);
 
   useEffect(() => {
     return () => {
@@ -111,7 +147,7 @@ export function ContextualPreflopDrill({
     );
   }
 
-  const correct = answer === spot.expected;
+  const correct = answer === spot.expected && sizingCorrect !== false;
   return (
     <div className="flex w-full flex-col items-center">
       <div className="flex w-full max-w-sm items-baseline justify-between">
@@ -154,7 +190,7 @@ export function ContextualPreflopDrill({
         {(["fold", "call", "raise"] as const).map((action) => (
           <button
             key={action}
-            disabled={answer !== null}
+            disabled={answer !== null || pendingRaise}
             onClick={() => choose(action)}
             className={cn(
               "w-28 rounded-xl border py-4 text-sm font-medium capitalize transition",
@@ -165,11 +201,36 @@ export function ContextualPreflopDrill({
               answer !== null && answer !== action && spot.expected === action && "border-emerald-500 text-emerald-600 dark:text-emerald-400",
             )}
           >
-            {action}
+            {action === "raise" && spot.spot.scenario === "vs-4bet" ? "all-in" : action}
             <span className="mt-1 block text-[10px] opacity-40">{action[0].toUpperCase()}</span>
           </button>
         ))}
       </div>
+
+      {pendingRaise && (
+        <div className="mt-6 w-full max-w-sm border-y border-zinc-200 py-5 dark:border-zinc-800">
+          <div className="flex items-baseline justify-between">
+            <label htmlFor="raise-size" className="text-sm font-medium">Raise to</label>
+            <output htmlFor="raise-size" className="font-mono text-lg font-semibold tabular-nums">{raiseSize}bb</output>
+          </div>
+          <input
+            id="raise-size"
+            type="range"
+            min="2"
+            max="25"
+            step="0.5"
+            value={raiseSize}
+            onChange={(event) => setRaiseSize(Number(event.target.value))}
+            className="mt-5 w-full accent-amber-500"
+          />
+          <button
+            onClick={submitRaise}
+            className="mt-5 w-full rounded-lg bg-zinc-900 py-3 text-sm font-medium text-white dark:bg-white dark:text-zinc-900"
+          >
+            Confirm {raiseSize}bb
+          </button>
+        </div>
+      )}
 
       {answer !== null && !correct && (
         <div className="mt-5 max-w-md text-center">
@@ -179,8 +240,15 @@ export function ContextualPreflopDrill({
             </p>
           )}
           <p className="text-sm font-medium text-emerald-600 dark:text-emerald-400">
-            {spot.expected}
+            {spot.expected === "raise" && expectedRaiseSize !== null
+              ? `raise to ${expectedRaiseSize}bb`
+              : spot.expected === "raise"
+                ? "all-in"
+                : spot.expected}
           </p>
+          {answer === "raise" && sizingCorrect === false && (
+            <p className="mt-1 text-xs text-rose-600 dark:text-rose-400">Your size: {raiseSize}bb</p>
+          )}
           <p className="mt-2 text-xs leading-relaxed text-zinc-500 dark:text-zinc-400">
             {contextualRuleLabel(spot)}
           </p>
