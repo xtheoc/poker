@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { MigrationNotice } from "@/components/migration-notice";
 import { StrategyPreflopDrill } from "@/components/strategy-preflop-drill";
+import { MixedPreflopDrill } from "@/components/mixed-preflop-drill";
 import {
   StrategyPracticeCircuit,
   type CircuitDrillId,
@@ -11,7 +12,10 @@ import { QuickfireDrill } from "@/components/quickfire-drill";
 import { dealHud } from "@/lib/hud/deal";
 import type { ChartSet, Scenario } from "@/lib/poker/charts";
 import { getLearningStrategy } from "@/lib/strategies";
-import { dealContextualPreflopSession } from "@/lib/strategies/ctm-contextual";
+import {
+  dealContextualPreflopSession,
+  dealMixedContextualPreflopSession,
+} from "@/lib/strategies/ctm-contextual";
 import { dealCtmSizingSession } from "@/lib/strategies/ctm-sizing";
 import type { LeakTarget } from "@/lib/poker/leak-drill";
 import {
@@ -190,6 +194,25 @@ export default async function StrategyDrillPage({
   const preflopCircuit = circuitDrills.filter((drill) => PREFLOP_DRILLS.has(drill));
 
   if (typeof exercise === "string") {
+    if (exercise === "preflop" && preflopCircuit.length > 0) {
+      return (
+        <main className="mx-auto w-full max-w-3xl px-5 py-8 sm:px-8 sm:py-10">
+          <StrategyNav strategyId={strategy.id} strategyName={strategy.name} />
+          <div className="mx-auto mt-10 max-w-xl">
+            <p className="font-mono text-[10px] font-medium uppercase tracking-[0.15em] text-zinc-500">
+              Mixed pre-flop
+            </p>
+            <h1 className="mt-2 text-3xl font-semibold tracking-tight">Read the table. Choose once.</h1>
+          </div>
+          <div className="mt-8">
+            <MixedPreflopDrill
+              chartSet={strategy.chartSet}
+              initialSpots={dealMixedContextualPreflopSession(40)}
+            />
+          </div>
+        </main>
+      );
+    }
     const drills = exercise === "preflop" ? preflopCircuit : circuitDrills;
     if (drills.length > 0) {
       const rangeNodes = strategy.chartSet.nodes.filter(
@@ -234,7 +257,7 @@ export default async function StrategyDrillPage({
           {preflopCircuit.length > 0 && (
             <Link href={`/strategies/${strategy.id}/drill?exercise=preflop`} className="rounded-lg border border-zinc-200 bg-zinc-50/70 p-5 transition hover:border-zinc-400 dark:border-zinc-800 dark:bg-zinc-900/30 dark:hover:border-zinc-600">
               <p className="font-medium">Pre-flop exercise</p>
-              <p className="mt-2 text-sm leading-6 text-zinc-500 dark:text-zinc-400">Every opened pre-flop subject, one by one.</p>
+              <p className="mt-2 text-sm leading-6 text-zinc-500 dark:text-zinc-400">Mixed real-table decisions: open, squeeze, 3-bet and 4-bet spots.</p>
             </Link>
           )}
           {circuitDrills.length > preflopCircuit.length && (

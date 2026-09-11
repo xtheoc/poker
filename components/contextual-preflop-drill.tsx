@@ -9,6 +9,7 @@ import {
   type ChartSet,
 } from "@/lib/poker/charts";
 import {
+  CONTEXTUAL_FAMILY_LABELS,
   type ContextualPreflopSpot,
   contextualRuleLabel,
 } from "@/lib/strategies/ctm-contextual";
@@ -21,11 +22,14 @@ export function ContextualPreflopDrill({
   initialSpots,
   completionStreak,
   onMastery,
+  showFamily = false,
 }: {
   chartSet: ChartSet;
   initialSpots: readonly ContextualPreflopSpot[];
   completionStreak: number;
   onMastery: (result: { score: number; durationMs: number; answers: number }) => void;
+  /** General practice mixes branches, so identify the branch after each spot. */
+  showFamily?: boolean;
 }) {
   const [index, setIndex] = useState(0);
   const [streak, setStreak] = useState(0);
@@ -126,6 +130,11 @@ export function ContextualPreflopDrill({
           playerTypes={spot.playerTypes}
         />
       </div>
+      {showFamily && (
+        <p className="mt-3 font-mono text-[10px] font-medium uppercase tracking-[0.14em] text-zinc-400 dark:text-zinc-500">
+          {CONTEXTUAL_FAMILY_LABELS[spot.family]}
+        </p>
+      )}
       <div className="mt-2 flex items-center gap-3 text-xs text-zinc-500 dark:text-zinc-400">
         <span>{spot.spot.stackBb}bb effective</span>
         <span
@@ -164,6 +173,11 @@ export function ContextualPreflopDrill({
 
       {answer !== null && !correct && (
         <div className="mt-5 max-w-md text-center">
+          {showFamily && (
+            <p className="mb-2 font-mono text-[10px] font-medium uppercase tracking-[0.14em] text-zinc-400 dark:text-zinc-500">
+              {CONTEXTUAL_FAMILY_LABELS[spot.family]}
+            </p>
+          )}
           <p className="text-sm font-medium text-emerald-600 dark:text-emerald-400">
             {spot.expected}
           </p>

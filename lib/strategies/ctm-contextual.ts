@@ -36,6 +36,28 @@ type ContextTemplate = Omit<RuleSpot, "inPosition" | "callers"> & {
   callers?: readonly Position[];
 };
 
+/** The decision branch a table spot belongs to. Kept as data so the drill can
+ * rotate branches without giving away the answer in advance. */
+export type ContextualDecisionFamily =
+  | "facing-open"
+  | "squeeze"
+  | "facing-3bet"
+  | "facing-4bet";
+
+const FAMILY_FOR_SCENARIO: Partial<Record<RuleSpot["scenario"], ContextualDecisionFamily>> = {
+  "vs-rfi": "facing-open",
+  squeeze: "squeeze",
+  "vs-3bet": "facing-3bet",
+  "vs-4bet": "facing-4bet",
+};
+
+export const CONTEXTUAL_FAMILY_LABELS: Record<ContextualDecisionFamily, string> = {
+  "facing-open": "Facing an open",
+  squeeze: "Open + caller",
+  "facing-3bet": "Facing a 3-bet",
+  "facing-4bet": "Facing a 4-bet",
+};
+
 /** Every template is a source rule and one useful contrast to that rule. */
 const TEMPLATES: readonly ContextTemplate[] = [
   { id: "value-3bet", scenario: "vs-rfi", position: "BTN", villain: "CO", hand: "AKo", stackBb: 100 },
@@ -140,6 +162,7 @@ const TEMPLATES: readonly ContextTemplate[] = [
 
 export interface ContextualPreflopSpot {
   id: string;
+  family: ContextualDecisionFamily;
   node: ChartNode;
   spot: RuleSpot;
   expected: ActionKind;
@@ -166,6 +189,8 @@ function makeSpot(template: ContextTemplate, rng: () => number): ContextualPrefl
   };
   const rule = decide(rulesFor(spot.scenario), spot, { useReads: true })?.rule;
   if (!rule) throw new Error(`No contextual rule for ${template.id}`);
+  const family = FAMILY_FOR_SCENARIO[spot.scenario];
+  if (!family) throw new Error(`No contextual decision family for ${spot.scenario}`);
 
   const node: ChartNode = {
     key: {
@@ -181,6 +206,7 @@ function makeSpot(template: ContextTemplate, rng: () => number): ContextualPrefl
 
   return {
     id: template.id,
+    family,
     node,
     spot,
     expected: rule.then,
@@ -224,6 +250,52 @@ export function dealContextualPreflopSession(
     }
     spots.push(makeSpot(template, rng));
     previous = template.id;
+  }
+
+  return spots;
+}
+
+/**
+ * Deal a mixed sequence of at-table decisions.
+ *
+ * The ordinary lesson drills deliberately stay within one branch so they can
+ * prove one rule. General practice is different: it must require recognising
+ * the branch before choosing an action. Every group of four contains one spot
+ * from each branch, in a shuffled order, so no category gets buried behind a
+ * long run of another.
+ */
+export function dealMixedContextualPreflopSession(
+  count: number,
+  rng: () => number = Math.random,
+): ContextualPreflopSpot[] {
+  const families = Object.keys(CONTEXTUAL_FAMILY_LABELS) as ContextualDecisionFamily[];
+  const byFamily = new Map<ContextualDecisionFamily, readonly ContextTemplate[]>(
+    families.map((family) => [
+      family,
+      TEMPLATES.filter((template) => FAMILY_FOR_SCENARIO[template.scenario] === family),
+    ]),
+  );
+  const spots: ContextualPreflopSpot[] = [];
+  let previous: string | undefined;
+
+  while (spots.length < count) {
+    const order = [...families];
+    for (let index = order.length - 1; index > 0; index--) {
+      const swap = Math.floor(rng() * (index + 1));
+      [order[index], order[swap]] = [order[swap]!, order[index]!];
+    }
+
+    for (const family of order) {
+      if (spots.length >= count) break;
+      const templates = byFamily.get(family);
+      if (!templates?.length) throw new Error(`No contextual templates for ${family}`);
+      let template = templates[Math.floor(rng() * templates.length)]!;
+      if (templates.length > 1 && template.id === previous) {
+        template = templates[(templates.indexOf(template) + 1) % templates.length]!;
+      }
+      spots.push(makeSpot(template, rng));
+      previous = template.id;
+    }
   }
 
   return spots;

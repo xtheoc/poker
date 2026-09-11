@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   contextualPreflopSpot,
   dealContextualPreflopSession,
+  dealMixedContextualPreflopSession,
 } from "./ctm-contextual";
 
 describe("CTM contextual preflop dealer", () => {
@@ -35,5 +36,14 @@ describe("CTM contextual preflop dealer", () => {
     expect(value.expected).toBe("raise");
     expect(value.node.key.callers).toEqual(["HJ", "CO"]);
     expect(fold.expected).toBe("fold");
+  });
+
+  it("mixes one table-decision branch at a time before repeating a branch", () => {
+    const spots = dealMixedContextualPreflopSession(12, () => 0.3);
+
+    expect(spots).toHaveLength(12);
+    for (let index = 0; index < spots.length; index += 4) {
+      expect(new Set(spots.slice(index, index + 4).map((spot) => spot.family)).size).toBe(4);
+    }
   });
 });
