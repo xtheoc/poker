@@ -1,5 +1,4 @@
 import {
-  ArrowDown,
   ArrowRight,
   ArrowUpRight,
   Check,
@@ -149,13 +148,65 @@ function SizingMap() {
   );
 }
 
+function ActionCell({
+  action,
+  children,
+}: {
+  action: Action;
+  children?: React.ReactNode;
+}) {
+  const label = action === "raise" ? "Raise" : action === "call" ? "Call" : "Fold";
+  return (
+    <div
+      className={cn(
+        "min-h-24 border p-3",
+        action === "raise" && "border-amber-500/30 bg-amber-500/[0.06]",
+        action === "call" && "border-emerald-500/30 bg-emerald-500/[0.06]",
+        action === "fold" && "border-rose-500/30 bg-rose-500/[0.06]",
+      )}
+    >
+      <ActionMark action={action}>{label}</ActionMark>
+      {children ? (
+        <div className="mt-3 space-y-1.5 text-xs leading-5 text-zinc-700 dark:text-zinc-300">{children}</div>
+      ) : (
+        <p className="mt-4 font-mono text-xs text-zinc-400 dark:text-zinc-600">—</p>
+      )}
+    </div>
+  );
+}
+
+function RuleLine({ children, emphasis = false }: { children: React.ReactNode; emphasis?: boolean }) {
+  return <p className={cn(emphasis && "font-semibold text-zinc-950 dark:text-white")}>{children}</p>;
+}
+
+function ActionGrid({
+  raise,
+  call,
+  fold,
+}: {
+  raise?: React.ReactNode;
+  call?: React.ReactNode;
+  fold?: React.ReactNode;
+}) {
+  return (
+    <div className="grid grid-cols-3 gap-2">
+      <ActionCell action="raise">{raise}</ActionCell>
+      <ActionCell action="call">{call}</ActionCell>
+      <ActionCell action="fold">{fold}</ActionCell>
+    </div>
+  );
+}
+
 function FacingOpenMap() {
   return (
     <Card title="Facing an open" Icon={ArrowRight}>
-      <Band label="value"><Token>AA · KK · QQ · AK</Token><ActionMark action="raise">3-bet</ActionMark></Band>
-      <Band label="strong"><Token>JJ · TT · AQ</Token><ActionMark action="call">call</ActionMark></Band>
-      <Band label="set mine"><Token>pocket pair</Token><Token tone="sky">50bb IP</Token><Token tone="violet">70bb OOP</Token><ActionMark action="call">call</ActionMark></Band>
-      <Band label="everything else"><ActionMark action="fold">fold</ActionMark></Band>
+      <div className="py-4">
+        <ActionGrid
+          raise={<><RuleLine emphasis>QQ+ · AK</RuleLine><RuleLine>3× IP · 4× OOP</RuleLine><RuleLine>2.5× or jam vs 50bb−</RuleLine></>}
+          call={<><RuleLine emphasis>JJ · TT · AQ</RuleLine><RuleLine>Any pair: 50bb IP</RuleLine><RuleLine>70bb OOP</RuleLine></>}
+          fold={<RuleLine emphasis>Everything else</RuleLine>}
+        />
+      </div>
     </Card>
   );
 }
@@ -164,10 +215,12 @@ function SqueezeMap() {
   return (
     <Card title="Squeeze" Icon={ArrowRight}>
       <Band label="line"><Token>open</Token><ArrowRight className="size-3.5 text-zinc-400" /><Token>caller</Token><ArrowRight className="size-3.5 text-zinc-400" /><Token tone="sky">you</Token></Band>
-      <Band label="value"><Token>QQ+ · AK</Token><ActionMark action="raise">squeeze</ActionMark></Band>
-      <Band label="exact exception"><Token>BB · JJ · early open · 2 callers</Token><ActionMark action="raise">squeeze</ActionMark></Band>
-      <Band label="size"><Token tone="sky">3× IP</Token><Token tone="violet">4× OOP</Token><Token>+1bb / caller</Token></Band>
-      <Band label="otherwise"><ActionMark action="fold">fold</ActionMark></Band>
+      <div className="py-4">
+        <ActionGrid
+          raise={<><RuleLine emphasis>QQ+ · AK</RuleLine><RuleLine>BB JJ: early open + 2 callers</RuleLine><RuleLine>3× IP · 4× OOP · +1bb/caller</RuleLine></>}
+          fold={<RuleLine emphasis>Everything else</RuleLine>}
+        />
+      </div>
     </Card>
   );
 }
@@ -175,9 +228,13 @@ function SqueezeMap() {
 function ThreeBetMap() {
   return (
     <Card title="When they three-bet" Icon={Target}>
-      <Band label="100bb raise"><Token>AA · KK · QQ · JJ · AK</Token><ActionMark action="raise">4-bet</ActionMark></Band>
-      <Band label="100bb call"><Token>88–TT · AQ</Token><ActionMark action="call">call</ActionMark></Band>
-      <Band label="50bb or less"><Token tone="violet">never call</Token><ActionMark action="raise">jam value</ActionMark><ActionMark action="fold">fold rest</ActionMark></Band>
+      <div className="py-4">
+        <ActionGrid
+          raise={<><RuleLine emphasis>AA · KK · QQ · JJ · AK</RuleLine><RuleLine>4-bet: 3× their 3-bet</RuleLine><RuleLine>50bb−: jam value</RuleLine></>}
+          call={<><RuleLine emphasis>88–TT · AQ</RuleLine><RuleLine>100bb only</RuleLine></>}
+          fold={<><RuleLine emphasis>Everything else</RuleLine><RuleLine>50bb−: fold or jam</RuleLine><RuleLine>Never call</RuleLine></>}
+        />
+      </div>
     </Card>
   );
 }
@@ -185,85 +242,92 @@ function ThreeBetMap() {
 function FourBetMap() {
   return (
     <Card title="When they four-bet" Icon={EyeOff}>
-      <Band label="normal depth"><Token>AA · KK</Token><ActionMark action="raise">all-in</ActionMark></Band>
-      <Band label="everything else"><ActionMark action="fold">fold</ActionMark></Band>
-      <Band label="one exception"><Token tone="violet">KK · 200bb+ · verified nit</Token><ActionMark action="fold">fold</ActionMark></Band>
+      <div className="py-4">
+        <ActionGrid
+          raise={<><RuleLine emphasis>AA · KK</RuleLine><RuleLine>All-in</RuleLine></>}
+          fold={<><RuleLine emphasis>Everything else</RuleLine><RuleLine>KK, 200bb+ vs verified nit</RuleLine></>}
+        />
+      </div>
     </Card>
   );
 }
 
-function FlowStep({
+function DecisionRow({
   number,
   question,
-  children,
+  raise,
+  call,
+  fold,
 }: {
   number: string;
   question: string;
-  children: React.ReactNode;
+  raise?: React.ReactNode;
+  call?: React.ReactNode;
+  fold?: React.ReactNode;
 }) {
   return (
-    <div className="grid gap-3 border-t border-zinc-200 py-4 first:border-t-0 dark:border-zinc-800 sm:grid-cols-[2.5rem_13rem_1fr] sm:items-center">
-      <span className="flex size-7 items-center justify-center rounded-full bg-zinc-100 font-mono text-[10px] font-medium text-zinc-500 dark:bg-zinc-900 dark:text-zinc-400">{number}</span>
-      <p className="text-sm font-semibold tracking-tight">{question}</p>
-      <div className="flex min-w-0 flex-wrap items-center gap-2">{children}</div>
+    <div className="grid grid-cols-[11rem_repeat(3,minmax(11rem,1fr))] gap-2 border-t border-zinc-200 py-3 first:border-t-0 dark:border-zinc-800">
+      <div className="flex gap-3 px-1 py-2">
+        <span className="flex size-7 shrink-0 items-center justify-center rounded-full bg-zinc-100 font-mono text-[10px] font-medium text-zinc-500 dark:bg-zinc-900 dark:text-zinc-400">{number}</span>
+        <p className="pt-1 text-sm font-semibold leading-5 tracking-tight">{question}</p>
+      </div>
+      <ActionCell action="raise">{raise}</ActionCell>
+      <ActionCell action="call">{call}</ActionCell>
+      <ActionCell action="fold">{fold}</ActionCell>
     </div>
   );
-}
-
-function FlowArrow() {
-  return <ArrowDown className="mx-2 size-3.5 text-zinc-300 dark:text-zinc-700" aria-hidden="true" />;
 }
 
 function PreflopAlgorithm({ entries }: { entries: readonly PlaybookEntry[] }) {
   const ids = new Set(entries.map((entry) => entry.id));
   const steps = [
     ids.has("ranges") && ids.has("sizing") ? (
-      <FlowStep key="open" number="01" question="No raise in front">
-        <Token tone="sky">position range</Token>
-        <ActionMark action="raise">open</ActionMark>
-        <Token>4bb early · 3bb late</Token>
-        <Token tone="violet">+1bb / limper</Token>
-      </FlowStep>
+      <DecisionRow key="open" number="01" question="No raise in front"
+        raise={<><RuleLine emphasis>Your position range</RuleLine><RuleLine>4bb: UTG · HJ · SB</RuleLine><RuleLine>3bb: CO · BTN</RuleLine><RuleLine>+1bb / limper</RuleLine></>}
+        fold={<RuleLine emphasis>Not in your range</RuleLine>}
+      />
     ) : null,
     ids.has("facing-open") ? (
-      <FlowStep key="open-facing" number="02" question="One open. No caller.">
-        <Token>QQ+ · AK</Token><ActionMark action="raise">3-bet</ActionMark>
-        <Token>JJ · TT · AQ</Token><ActionMark action="call">call</ActionMark>
-        <Token tone="sky">pair: 50bb IP · 70bb OOP</Token>
-        <ActionMark action="fold">rest</ActionMark>
-      </FlowStep>
+      <DecisionRow key="open-facing" number="02" question="One open. No caller."
+        raise={<><RuleLine emphasis>QQ+ · AK</RuleLine><RuleLine>3× IP · 4× OOP</RuleLine><RuleLine>2.5× or jam vs 50bb−</RuleLine></>}
+        call={<><RuleLine emphasis>JJ · TT · AQ</RuleLine><RuleLine>Any pair: 50bb IP</RuleLine><RuleLine>70bb OOP</RuleLine></>}
+        fold={<RuleLine emphasis>Everything else</RuleLine>}
+      />
     ) : null,
     ids.has("squeeze") ? (
-      <FlowStep key="squeeze" number="03" question="Open + caller(s)">
-        <Token>QQ+ · AK</Token><ActionMark action="raise">squeeze</ActionMark>
-        <Token tone="violet">BB JJ · early + 2 callers</Token>
-        <ActionMark action="fold">rest</ActionMark>
-      </FlowStep>
+      <DecisionRow key="squeeze" number="03" question="Open + caller(s)"
+        raise={<><RuleLine emphasis>QQ+ · AK</RuleLine><RuleLine>BB JJ: early + 2 callers</RuleLine><RuleLine>3× IP · 4× OOP</RuleLine><RuleLine>+1bb / caller</RuleLine></>}
+        fold={<RuleLine emphasis>Everything else</RuleLine>}
+      />
     ) : null,
     ids.has("vs-3bet") ? (
-      <FlowStep key="three-bet" number="04" question="You raised. They 3-bet.">
-        <Token>100bb: AA · KK · QQ · JJ · AK</Token><ActionMark action="raise">4-bet</ActionMark>
-        <Token>88–TT · AQ</Token><ActionMark action="call">call</ActionMark>
-        <Token tone="violet">50bb−: never call</Token>
-      </FlowStep>
+      <DecisionRow key="three-bet" number="04" question="You raised. They 3-bet."
+        raise={<><RuleLine emphasis>AA · KK · QQ · JJ · AK</RuleLine><RuleLine>4-bet: 3× their 3-bet</RuleLine><RuleLine>50bb−: jam value</RuleLine></>}
+        call={<><RuleLine emphasis>88–TT · AQ</RuleLine><RuleLine>100bb only</RuleLine></>}
+        fold={<><RuleLine emphasis>Everything else</RuleLine><RuleLine>50bb−: fold or jam</RuleLine><RuleLine>Never call</RuleLine></>}
+      />
     ) : null,
     ids.has("vs-4bet") ? (
-      <FlowStep key="four-bet" number="05" question="You 3-bet. They 4-bet.">
-        <Token>AA · KK</Token><ActionMark action="raise">all-in</ActionMark>
-        <ActionMark action="fold">rest</ActionMark>
-        <Token tone="violet">KK · 200bb+ · nit → fold</Token>
-      </FlowStep>
+      <DecisionRow key="four-bet" number="05" question="You 3-bet. They 4-bet."
+        raise={<><RuleLine emphasis>AA · KK</RuleLine><RuleLine>All-in</RuleLine></>}
+        fold={<><RuleLine emphasis>Everything else</RuleLine><RuleLine>KK: fold 200bb+ vs verified nit</RuleLine></>}
+      />
     ) : null,
   ].filter((step): step is React.ReactElement => step !== null);
 
   return (
     <Card title="Pre-flop · action order" Icon={ArrowRight}>
-      {steps.map((step, index) => (
-        <div key={index}>
-          {step}
-          {index < steps.length - 1 && <FlowArrow />}
+      <div className="-mx-5 overflow-x-auto px-5 py-4">
+        <div className="min-w-[44rem]">
+          <div className="grid grid-cols-[11rem_repeat(3,minmax(11rem,1fr))] gap-2 pb-2 font-mono text-[10px] font-medium uppercase tracking-[0.14em] text-zinc-400 dark:text-zinc-500">
+            <span className="px-1">Situation</span>
+            <span className="px-3 text-amber-600 dark:text-amber-400">Raise</span>
+            <span className="px-3 text-emerald-600 dark:text-emerald-400">Call</span>
+            <span className="px-3 text-rose-600 dark:text-rose-400">Fold</span>
+          </div>
+          {steps}
         </div>
-      ))}
+      </div>
     </Card>
   );
 }
