@@ -22,10 +22,14 @@ export default async function StrategyPlaybookPage({
     .filter((lesson) => masteredIds.has(lesson.id))
     .flatMap((lesson) => lesson.playbook);
   return (
-    <main className="mx-auto w-full max-w-3xl px-5 py-8 sm:px-8 sm:py-10">
+    <main className="mx-auto w-full max-w-4xl px-5 py-8 sm:px-8 sm:py-10">
       <StrategyNav strategyId={strategy.id} strategyName={strategy.name} />
-      <div className="mt-10">
-        <h1 className="text-3xl font-semibold tracking-tight">Playbook</h1>
+      <div className="mt-10 flex items-end justify-between border-b border-zinc-200 pb-5 dark:border-zinc-800">
+        <div>
+          <p className="font-mono text-[10px] font-medium uppercase tracking-[0.16em] text-zinc-500">At the table</p>
+          <h1 className="mt-2 text-3xl font-semibold tracking-tight sm:text-4xl">Playbook</h1>
+        </div>
+        <p className="hidden max-w-48 text-right text-xs leading-5 text-zinc-500 sm:block">Only mastered rules appear here.</p>
       </div>
       {entries.length > 0 ? (
         <StrategyPlaybook entries={entries} />
