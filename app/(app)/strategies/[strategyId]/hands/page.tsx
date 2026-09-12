@@ -1,6 +1,5 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { ClipboardList } from "lucide-react";
 import { HandHistoryWatcher } from "@/components/hand-history-watcher";
 import { HandImport } from "@/components/hand-import";
 import { MigrationNotice } from "@/components/migration-notice";
@@ -65,21 +64,14 @@ export default async function StrategyHandsPage({
   return (
     <main className="mx-auto w-full max-w-4xl px-5 py-8 sm:px-8 sm:py-10">
       <StrategyNav strategyId={strategy.id} strategyName={strategy.name} />
-      <div className="mt-10 flex flex-wrap items-end justify-between gap-5">
-        <div className="flex items-center gap-2 text-xs font-medium uppercase tracking-[0.14em] text-zinc-500">
-          <ClipboardList className="size-3.5" aria-hidden="true" />
-          Review
-        </div>
-        <StrategyHandReview strategyId={strategy.id} />
-      </div>
-      <h1 className="mt-2 text-4xl font-semibold tracking-tight">Hands</h1>
+      <h1 className="mt-8 text-3xl font-semibold tracking-tight sm:mt-10 sm:text-4xl">Hands</h1>
 
-      <section className="mt-8 grid grid-cols-2 border-y border-zinc-200 dark:border-zinc-800 sm:grid-cols-5">
+      <section className="mt-6 grid grid-cols-3 border-y border-zinc-200 dark:border-zinc-800 sm:mt-8 sm:grid-cols-5">
         <Metric label="Hands" value={String(summary.hands)} />
         <Metric label="Net" value={`${summary.netBb >= 0 ? "+" : ""}${summary.netBb.toFixed(1)}bb`} />
-        <Metric label="VPIP" value={percent(summary.vpip)} />
-        <Metric label="PFR" value={percent(summary.pfr)} />
         <Metric label="Accuracy" value={percent(summary.accuracy)} />
+        <Metric className="hidden sm:block" label="VPIP" value={percent(summary.vpip)} />
+        <Metric className="hidden sm:block" label="PFR" value={percent(summary.pfr)} />
       </section>
 
       <section className="mt-8">
@@ -113,6 +105,14 @@ export default async function StrategyHandsPage({
             />
           </div>
         </details>
+        <details className="mt-4">
+          <summary className="cursor-pointer text-xs text-zinc-500 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100">
+            Review earlier imports
+          </summary>
+          <div className="mt-3">
+            <StrategyHandReview strategyId={strategy.id} />
+          </div>
+        </details>
       </section>
 
       <p className="mt-10 text-xs text-zinc-400 dark:text-zinc-500">
@@ -122,9 +122,17 @@ export default async function StrategyHandsPage({
   );
 }
 
-function Metric({ label, value }: { label: string; value: string }) {
+function Metric({
+  label,
+  value,
+  className = "",
+}: {
+  label: string;
+  value: string;
+  className?: string;
+}) {
   return (
-    <div className="border-b border-zinc-200 py-4 pr-4 last:border-b-0 sm:border-r sm:border-b-0 sm:px-4 sm:first:pl-0 sm:last:border-r-0">
+    <div className={`border-r border-zinc-200 py-3 text-center last:border-r-0 dark:border-zinc-800 sm:px-4 sm:text-left sm:first:pl-0 ${className}`}>
       <p className="text-xs text-zinc-500 dark:text-zinc-400">{label}</p>
       <p className="mt-1 text-lg font-medium tabular-nums">{value}</p>
     </div>
@@ -152,21 +160,21 @@ function SessionRow({
   return (
     <Link
       href={`/strategies/${strategyId}/hands/${play.id}`}
-      className="grid grid-cols-[1fr_auto] gap-x-4 gap-y-1 py-3 text-sm transition hover:bg-zinc-50 dark:hover:bg-zinc-900 sm:grid-cols-[minmax(10rem,1fr)_auto_auto_auto_auto] sm:items-baseline sm:gap-x-5"
+      className="block px-1 py-3 transition hover:bg-zinc-50 dark:hover:bg-zinc-900 sm:grid sm:grid-cols-[minmax(10rem,1fr)_auto_auto_auto_auto] sm:items-baseline sm:gap-x-5"
     >
-      <span className="font-medium">{date} · {time}</span>
-      <span className="text-right text-xs tabular-nums text-zinc-500 dark:text-zinc-400">
-        {stats.hands} {stats.hands === 1 ? "hand" : "hands"}
-      </span>
-      <span className={stats.netBb >= 0 ? "text-right tabular-nums text-emerald-600 dark:text-emerald-400" : "text-right tabular-nums text-rose-600 dark:text-rose-400"}>
-        {stats.netBb >= 0 ? "+" : ""}{stats.netBb.toFixed(1)}bb
-      </span>
-      <span className="col-start-1 text-xs text-zinc-500 dark:text-zinc-400 sm:col-auto sm:text-right">
-        {stats.charted > 0 ? `${stats.accuracy.toFixed(0)}% right` : "no graded spots"}
-      </span>
-      <span className="text-right text-xs text-zinc-400 dark:text-zinc-500">
-        {stats.mistakes > 0 ? `${stats.mistakes} ${stats.mistakes === 1 ? "mistake" : "mistakes"}` : "clean"}
-      </span>
+      <div className="flex items-baseline justify-between gap-3 sm:contents">
+        <span className="font-medium">{date} · {time}</span>
+        <span className={stats.netBb >= 0 ? "text-right tabular-nums text-emerald-600 dark:text-emerald-400" : "text-right tabular-nums text-rose-600 dark:text-rose-400"}>
+          {stats.netBb >= 0 ? "+" : ""}{stats.netBb.toFixed(1)}bb
+        </span>
+      </div>
+      <div className="mt-1 flex gap-3 text-xs text-zinc-500 dark:text-zinc-400 sm:contents">
+        <span className="sm:text-right">{stats.hands} {stats.hands === 1 ? "hand" : "hands"}</span>
+        <span className="sm:text-right">{stats.charted > 0 ? `${stats.accuracy.toFixed(0)}% right` : "no graded spots"}</span>
+        <span className="text-zinc-400 dark:text-zinc-500 sm:text-right">
+          {stats.mistakes > 0 ? `${stats.mistakes} ${stats.mistakes === 1 ? "mistake" : "mistakes"}` : "clean"}
+        </span>
+      </div>
     </Link>
   );
 }

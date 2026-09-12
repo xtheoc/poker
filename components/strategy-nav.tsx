@@ -32,7 +32,7 @@ export function StrategyNav({
       >
         {strategyName}
       </Link>
-      <nav aria-label={`${strategyName} navigation`} className="mt-4 flex gap-1 overflow-x-auto pb-0.5">
+      <nav aria-label={`${strategyName} navigation`} className="mt-4 flex items-center justify-between gap-1 overflow-x-auto pb-0.5 sm:justify-start">
         {ITEMS.map(({ suffix, label, Icon }) => {
           const href = `${root}${suffix}`;
           const active = suffix
@@ -43,14 +43,14 @@ export function StrategyNav({
               key={suffix || "overview"}
               href={href}
               className={cn(
-                "inline-flex shrink-0 items-center gap-1.5 border-b-2 px-2 py-1.5 text-sm transition",
+                "inline-flex shrink-0 items-center justify-center gap-1.5 border-b-2 px-2.5 py-2 text-sm transition sm:px-2 sm:py-1.5",
                 active
                   ? "border-zinc-950 font-medium text-zinc-950 dark:border-white dark:text-white"
                   : "border-transparent text-zinc-500 hover:text-zinc-950 dark:hover:text-zinc-200",
               )}
             >
-              <Icon className="size-3.5" aria-hidden="true" />
-              {label}
+              <Icon className="size-4 sm:size-3.5" aria-hidden="true" />
+              <span className="sr-only sm:not-sr-only">{label}</span>
             </Link>
           );
         })}

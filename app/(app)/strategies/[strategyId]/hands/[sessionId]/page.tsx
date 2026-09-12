@@ -51,14 +51,14 @@ export default async function StrategySessionPage({
   return (
     <main className="mx-auto w-full max-w-4xl px-5 py-8 sm:px-8 sm:py-10">
       <StrategyNav strategyId={strategy.id} strategyName={strategy.name} />
-      <header className="mt-8 border-b border-zinc-200 pb-5 dark:border-zinc-800">
+      <header className="mt-6 border-b border-zinc-200 pb-5 dark:border-zinc-800 sm:mt-8">
         <Link
           href={`/strategies/${strategy.id}/hands`}
           className="text-xs text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200"
         >
           ← Sessions
         </Link>
-        <h1 className="mt-2 text-3xl font-semibold tracking-tight">{title}</h1>
+        <h1 className="mt-2 text-2xl font-semibold tracking-tight sm:text-3xl">{title}</h1>
         <p className="mt-1 text-sm text-zinc-500 dark:text-zinc-400">
           {time} · {stats.hands} {stats.hands === 1 ? "hand" : "hands"}
           {stats.minutes > 0 && ` · ${stats.minutes} min`}
@@ -73,7 +73,7 @@ export default async function StrategySessionPage({
       </header>
 
       <section className="mt-6">
-        <div className="grid grid-cols-[4.5rem_1fr_3rem_4.5rem] gap-x-3 border-b border-zinc-200 px-2 pb-2 text-[11px] font-medium uppercase tracking-wide text-zinc-400 dark:border-zinc-800">
+        <div className="hidden grid-cols-[4.5rem_1fr_3rem_4.5rem] gap-x-3 border-b border-zinc-200 px-2 pb-2 text-[11px] font-medium uppercase tracking-wide text-zinc-400 dark:border-zinc-800 sm:grid">
           <span>Time</span>
           <span>Hand</span>
           <span>Seat</span>
@@ -89,25 +89,13 @@ export default async function StrategySessionPage({
             const cards = hand.cards.length > 0 ? hand.cards.join(" ") : hand.handClass ?? "—";
 
             return (
-              <li
-                key={hand.psHandId}
-                className="grid grid-cols-[4.5rem_1fr_3rem_4.5rem] items-center gap-x-3 px-2 py-3 text-sm"
-              >
+              <li key={hand.psHandId} className="px-1 py-3 text-sm sm:grid sm:grid-cols-[4.5rem_1fr_3rem_4.5rem] sm:items-center sm:gap-x-3 sm:px-2">
+                <div className="flex items-center justify-between gap-3 sm:contents">
                 <span className="text-xs tabular-nums text-zinc-400 dark:text-zinc-500">
                   {hand.playedAt.toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit" })}
                 </span>
-                <span>
+                <span className="flex-1 sm:flex-none">
                   <span className="font-mono font-medium">{cards}</span>
-                  <span
-                    className={cn(
-                      "ml-2 text-xs",
-                      status === "needs review" && "text-rose-600 dark:text-rose-400",
-                      status === "correct" && "text-emerald-600 dark:text-emerald-400",
-                      status === "not covered" && "text-zinc-400 dark:text-zinc-500",
-                    )}
-                  >
-                    {status}
-                  </span>
                 </span>
                 <span className="text-xs text-zinc-500 dark:text-zinc-400">{hand.position ?? "—"}</span>
                 <span className={cn(
@@ -117,6 +105,17 @@ export default async function StrategySessionPage({
                   hand.netBb === 0 && "text-zinc-400 dark:text-zinc-500",
                 )}>
                   {hand.netBb > 0 ? "+" : ""}{hand.netBb.toFixed(1)}bb
+                </span>
+                </div>
+                <span
+                  className={cn(
+                    "mt-1 block text-xs sm:col-start-2 sm:mt-0",
+                    status === "needs review" && "text-rose-600 dark:text-rose-400",
+                    status === "correct" && "text-emerald-600 dark:text-emerald-400",
+                    status === "not covered" && "text-zinc-400 dark:text-zinc-500",
+                  )}
+                >
+                  {status}
                 </span>
               </li>
             );
