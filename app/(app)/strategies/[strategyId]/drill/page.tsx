@@ -196,15 +196,15 @@ export default async function StrategyDrillPage({
   if (typeof exercise === "string") {
     if (exercise === "preflop" && preflopCircuit.length > 0) {
       return (
-        <main className="mx-auto w-full max-w-3xl px-5 py-8 sm:px-8 sm:py-10">
+        <main className="mx-auto w-full max-w-xl px-5 py-8 sm:px-8 sm:py-10">
           <StrategyNav strategyId={strategy.id} strategyName={strategy.name} />
-          <div className="mx-auto mt-10 max-w-xl">
+          <div className="mt-8 flex items-baseline justify-between border-b border-zinc-200 pb-4 dark:border-zinc-800">
             <p className="font-mono text-[10px] font-medium uppercase tracking-[0.15em] text-zinc-500">
-              Mixed pre-flop
+              Pre-flop
             </p>
-            <h1 className="mt-2 text-3xl font-semibold tracking-tight">Read the table. Choose once.</h1>
+            <p className="text-xs text-zinc-500 dark:text-zinc-400">General drill</p>
           </div>
-          <div className="mt-8">
+          <div className="mt-6">
             <MixedPreflopDrill
               chartSet={strategy.chartSet}
               initialSpots={dealMixedContextualPreflopSession(40)}
@@ -243,65 +243,72 @@ export default async function StrategyDrillPage({
 
   if (requestedLesson === undefined && availableDrills.length > 0) {
     return (
-      <main className="mx-auto w-full max-w-3xl px-5 py-8 sm:px-8 sm:py-10">
+      <main className="mx-auto w-full max-w-4xl px-5 py-8 sm:px-8 sm:py-10">
         <StrategyNav strategyId={strategy.id} strategyName={strategy.name} />
-        <div className="mt-10 max-w-xl">
-          <p className="text-xs font-medium uppercase tracking-[0.14em] text-zinc-500">
-            Practice
-          </p>
-          <h1 className="mt-2 text-4xl font-semibold tracking-tight">Drills</h1>
-          <p className="mt-3 text-sm leading-relaxed text-zinc-500 dark:text-zinc-400">Run the whole sequence, or train one skill in isolation.</p>
-        </div>
+        <header className="mt-10 border-b border-zinc-200 pb-8 dark:border-zinc-800">
+          <p className="font-mono text-[10px] font-medium uppercase tracking-[0.16em] text-zinc-500">Practice</p>
+          <h1 className="mt-3 text-4xl font-semibold tracking-tight">Drill</h1>
+        </header>
 
-        <div className="mt-10 grid gap-3 sm:grid-cols-2">
+        <section className="mt-8">
           {preflopCircuit.length > 0 && (
-            <Link href={`/strategies/${strategy.id}/drill?exercise=preflop`} className="rounded-lg border border-zinc-200 bg-zinc-50/70 p-5 transition hover:border-zinc-400 dark:border-zinc-800 dark:bg-zinc-900/30 dark:hover:border-zinc-600">
-              <p className="font-medium">Pre-flop exercise</p>
-              <p className="mt-2 text-sm leading-6 text-zinc-500 dark:text-zinc-400">Mixed real-table decisions: open, squeeze, 3-bet and 4-bet spots.</p>
+            <Link href={`/strategies/${strategy.id}/drill?exercise=preflop`} className="group grid min-h-44 gap-5 border border-zinc-200 p-6 transition hover:border-zinc-500 hover:bg-zinc-50 sm:grid-cols-[1fr_auto] sm:items-end sm:p-8 dark:border-zinc-800 dark:hover:border-zinc-600 dark:hover:bg-zinc-900/40">
+              <div>
+                <p className="font-mono text-[10px] font-medium uppercase tracking-[0.16em] text-amber-600 dark:text-amber-400">General pre-flop</p>
+                <h2 className="mt-4 text-2xl font-semibold tracking-tight">Play the table</h2>
+                <p className="mt-2 text-sm text-zinc-500 dark:text-zinc-400">Open, call, fold, three-bet, four-bet.</p>
+              </div>
+              <span className="text-sm font-medium text-zinc-500 transition group-hover:translate-x-1 group-hover:text-zinc-950 dark:group-hover:text-white">Start →</span>
             </Link>
           )}
-          {circuitDrills.length > preflopCircuit.length && (
-            <Link href={`/strategies/${strategy.id}/drill?exercise=all`} className="rounded-lg border border-zinc-200 bg-zinc-50/70 p-5 transition hover:border-zinc-400 dark:border-zinc-800 dark:bg-zinc-900/30 dark:hover:border-zinc-600">
-              <p className="font-medium">Everything unlocked</p>
-              <p className="mt-2 text-sm leading-6 text-zinc-500 dark:text-zinc-400">Run pre-flop, then every unlocked post-flop subject.</p>
-            </Link>
-          )}
-        </div>
+        </section>
 
-        <div className="mt-8 divide-y divide-zinc-200 border-y border-zinc-200 dark:divide-zinc-800 dark:border-zinc-800">
+        <section className="mt-10 divide-y divide-zinc-200 border-y border-zinc-200 dark:divide-zinc-800 dark:border-zinc-800">
           {mistakeTargets.length > 0 && (
             <Link
               href={`/strategies/${strategy.id}/drill?mistakes=1`}
-              className="group grid gap-3 py-6 transition sm:grid-cols-[2rem_1fr_auto] sm:items-center"
+              className="group flex items-center justify-between gap-5 py-4 transition"
             >
-              <span className="font-mono text-xs text-zinc-400 dark:text-zinc-500">00</span>
               <div>
                 <p className="font-medium">Your mistakes</p>
-                <p className="mt-1 text-sm text-zinc-500 dark:text-zinc-400">
-                  Practice every verified mistake, without a daily limit.
-                </p>
+                <p className="mt-1 text-sm text-zinc-500 dark:text-zinc-400">Verified spots from your own hands.</p>
               </div>
-              <span className="text-xs font-medium text-amber-600 dark:text-amber-400">
-                {mistakeTargets.length} spots
+              <span className="shrink-0 font-mono text-xs font-medium text-amber-600 dark:text-amber-400">
+                {mistakeTargets.length} →
               </span>
             </Link>
           )}
+          {circuitDrills.length > preflopCircuit.length && (
+            <Link
+              href={`/strategies/${strategy.id}/drill?exercise=all`}
+              className="group flex items-center justify-between gap-5 py-4 transition"
+            >
+              <div>
+                <p className="font-medium">Everything unlocked</p>
+                <p className="mt-1 text-sm text-zinc-500 dark:text-zinc-400">One pass through every available subject.</p>
+              </div>
+              <span className="shrink-0 text-sm text-zinc-400 transition group-hover:translate-x-1 group-hover:text-zinc-950 dark:group-hover:text-white">→</span>
+            </Link>
+          )}
+        </section>
+
+        <section className="mt-12">
+          <p className="font-mono text-[10px] font-medium uppercase tracking-[0.16em] text-zinc-500">Individual drills</p>
+          <div className="mt-4 divide-y divide-zinc-200 border-y border-zinc-200 dark:divide-zinc-800 dark:border-zinc-800">
           {availableDrills.map(({ item, requirement, drill }, index) => {
             const current = active?.lesson.id === item.lesson.id;
             return (
               <Link
                 key={item.lesson.id}
                 href={`/strategies/${strategy.id}/drill?lesson=${item.lesson.id}`}
-                className="group grid gap-3 py-6 transition sm:grid-cols-[2rem_1fr_auto] sm:items-center"
+                className="group grid gap-3 py-4 transition sm:grid-cols-[2rem_1fr_auto] sm:items-center"
               >
                 <span className="font-mono text-xs text-zinc-400 dark:text-zinc-500">
                   {String(index + 1).padStart(2, "0")}
                 </span>
                 <div>
                   <p className="font-medium">{drill.label}</p>
-                  <p className="mt-1 text-sm text-zinc-500 dark:text-zinc-400">
-                    {drill.description}
-                  </p>
+                  {current && <p className="mt-1 text-sm text-zinc-500 dark:text-zinc-400">{drill.description}</p>}
                 </div>
                 <span className={
                   current
@@ -313,7 +320,8 @@ export default async function StrategyDrillPage({
               </Link>
             );
           })}
-        </div>
+          </div>
+        </section>
       </main>
     );
   }

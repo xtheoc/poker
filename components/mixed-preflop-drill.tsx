@@ -8,7 +8,7 @@ import type { ContextualPreflopSpot } from "@/lib/strategies/ctm-contextual";
 type Result = { score: number; durationMs: number; answers: number };
 
 /**
- * Free practice for the four pre-flop decision branches.
+ * Free practice for the pre-flop decision branches.
  *
  * This is deliberately a decision deck, not a course drill: it does not
  * write mastery progress. A correct run means the player identified the table
