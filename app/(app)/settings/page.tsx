@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { RegradeHands } from "@/components/regrade-hands";
 import { SettingsForm } from "@/components/settings-form";
+import { GlobalSignOut } from "@/components/global-signout";
 import { PLAYSTYLE } from "@/lib/playstyle";
 import { BEGINNER_6MAX } from "@/lib/poker/charts/beginner-6max";
 import { requireUser } from "@/lib/session";
@@ -33,6 +34,10 @@ export default async function SettingsPage() {
           pokerstarsAlias: profile?.pokerstars_alias ?? "",
         }}
       />
+
+      <div className="mt-10">
+        <GlobalSignOut />
+      </div>
 
       <div className="mt-10 border-t border-zinc-200 pt-6 dark:border-zinc-800">
         <h2 className="text-sm font-semibold">The chart you are graded against</h2>
