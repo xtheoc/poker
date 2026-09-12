@@ -70,8 +70,11 @@ const { error: signInError } = await supabase.auth.signInWithOtp({
   options: { emailRedirectTo: redirectTo },
 });
 if (signInError) {
-  server.close();
-  stop(`Could not send sign-in email: ${signInError.message}`);
+  // Let Windows release the local callback socket before returning an error.
+  // Calling process.exit() while libuv is closing this handle can itself emit
+  // a noisy assertion, hiding the actionable Supabase response.
+  await new Promise((resolveClose) => server.close(resolveClose));
+  throw new Error(`Could not send sign-in email: ${signInError.message}`);
 }
 
 console.log("Sign-in email sent. Open its link in this browser; setup will finish automatically.");
