@@ -1,22 +1,19 @@
 import { notFound } from "next/navigation";
-import { ClipboardList, TrendingDown } from "lucide-react";
+import Link from "next/link";
+import { ClipboardList } from "lucide-react";
 import { HandHistoryWatcher } from "@/components/hand-history-watcher";
 import { HandImport } from "@/components/hand-import";
-import { LeakList } from "@/components/leak-list";
 import { MigrationNotice } from "@/components/migration-notice";
 import { StrategyHandReview } from "@/components/strategy-hand-review";
-import { findLeaks } from "@/lib/leaks";
 import { StrategyNav } from "@/components/strategy-nav";
 import { getLearningStrategy } from "@/lib/strategies";
 import {
-  lessonForNode,
-  loadStrategyCoverage,
   loadStrategyReviewSummary,
-  loadStrategyViolations,
-  MissingStrategyDecisionTablesError,
   MissingStrategyReviewTablesError,
+  loadStrategySessionHands,
 } from "@/lib/strategies/hand-review";
 import { optionalUser } from "@/lib/session";
+import { groupSessions, statsFor, type PlaySession } from "@/lib/sessions";
 
 export default async function StrategyHandsPage({
   params,
@@ -41,28 +38,13 @@ export default async function StrategyHandsPage({
   }
 
   let summary;
-  let violations;
-  let coverage;
+  let hands;
   try {
-    [summary, violations, coverage] = await Promise.all([
+    [summary, hands] = await Promise.all([
       loadStrategyReviewSummary(session.supabase, session.userId, strategy.id),
-      loadStrategyViolations(session.supabase, session.userId, strategy.id),
-      loadStrategyCoverage(session.supabase, session.userId, strategy.id),
+      loadStrategySessionHands(session.supabase, session.userId, strategy.id),
     ]);
   } catch (error) {
-    if (error instanceof MissingStrategyDecisionTablesError) {
-      return (
-        <main className="mx-auto w-full max-w-4xl px-5 py-8 sm:px-8 sm:py-10">
-          <StrategyNav strategyId={strategy.id} strategyName={strategy.name} />
-          <div className="mt-10">
-            <MigrationNotice
-              file="0011_strategy_decisions.sql"
-              what="strategy decision coverage"
-            />
-          </div>
-        </main>
-      );
-    }
     if (error instanceof MissingStrategyReviewTablesError) {
       return (
         <main className="mx-auto w-full max-w-4xl px-5 py-8 sm:px-8 sm:py-10">
@@ -78,8 +60,7 @@ export default async function StrategyHandsPage({
     }
     throw error;
   }
-
-  const leaks = findLeaks(violations);
+  const sessions = groupSessions(hands);
 
   return (
     <main className="mx-auto w-full max-w-4xl px-5 py-8 sm:px-8 sm:py-10">
@@ -102,64 +83,36 @@ export default async function StrategyHandsPage({
       </section>
 
       <section className="mt-8">
+        <h2 className="text-sm font-semibold">Sessions</h2>
+        {sessions.length > 0 ? (
+          <div className="mt-3 divide-y border-y border-zinc-200 dark:border-zinc-800 dark:divide-zinc-800">
+            {sessions.map((play) => (
+              <SessionRow key={play.id} strategyId={strategy.id} play={play} />
+            ))}
+          </div>
+        ) : (
+          <p className="mt-3 text-sm text-zinc-500 dark:text-zinc-400">
+            No sessions yet.
+          </p>
+        )}
+      </section>
+
+      <section className="mt-10 border-t border-zinc-200 pt-6 dark:border-zinc-800">
         <h2 className="text-sm font-semibold">Add hands</h2>
         <div className="mt-3">
-          <HandHistoryWatcher
-          />
+          <HandHistoryWatcher />
         </div>
         <details className="mt-4">
           <summary className="cursor-pointer text-xs text-zinc-500 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100">
             Import a file instead
           </summary>
           <div className="mt-3">
-            <HandImport signedIn />
-          </div>
-        </details>
-      </section>
-
-      <section className="mt-10 border-y border-zinc-200 py-5 dark:border-zinc-800">
-        <div className="flex items-center justify-between gap-4">
-          <h2 className="text-sm font-semibold">Coverage</h2>
-          <span className="text-xs tabular-nums text-zinc-400 dark:text-zinc-500">
-            {coverage.total} decisions seen
-          </span>
-        </div>
-        <div className="mt-4 grid grid-cols-2 gap-x-6 gap-y-4 sm:grid-cols-4">
-          <Coverage label="Gradeable" value={coverage.gradeable} />
-          <Coverage label="Right" value={coverage.correct} />
-          <Coverage label="Drill only" value={coverage.drillOnly} />
-          <Coverage label="Not supported" value={coverage.unsupported} />
-        </div>
-      </section>
-
-      <section className="mt-10">
-        <div className="flex items-center gap-2">
-          <TrendingDown className="size-4 text-zinc-400" aria-hidden="true" />
-          <h2 className="text-sm font-semibold">What to fix</h2>
-        </div>
-        {leaks.length > 0 ? (
-          <div className="mt-4">
-            <LeakList
-              leaks={leaks}
-              violations={violations}
-              limit={5}
-              drillHref={(leak) => {
-                const lesson = lessonForNode(leak.nodeId);
-                return lesson
-                  ? `/strategies/${strategy.id}/drill?lesson=${lesson}`
-                  : `/strategies/${strategy.id}/drill`;
-              }}
+            <HandImport
+              signedIn
+              sessionHref={(id) => `/strategies/${strategy.id}/hands/${id}`}
             />
           </div>
-        ) : (
-          <p className="mt-3 text-sm text-zinc-500 dark:text-zinc-400">
-            {summary.hands === 0
-              ? "No matching hands reviewed yet."
-              : summary.charted === 0
-                ? "No preflop decisions matched a rule yet."
-                : "No recorded mistakes in the reviewed decisions."}
-          </p>
-        )}
+        </details>
       </section>
 
       <p className="mt-10 text-xs text-zinc-400 dark:text-zinc-500">
@@ -178,12 +131,43 @@ function Metric({ label, value }: { label: string; value: string }) {
   );
 }
 
-function Coverage({ label, value }: { label: string; value: number }) {
+function SessionRow({
+  strategyId,
+  play,
+}: {
+  strategyId: string;
+  play: PlaySession;
+}) {
+  const stats = statsFor(play.hands);
+  const date = play.startedAt.toLocaleDateString(undefined, {
+    weekday: "short",
+    day: "numeric",
+    month: "short",
+  });
+  const time = play.startedAt.toLocaleTimeString(undefined, {
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+
   return (
-    <div>
-      <p className="text-xs text-zinc-500 dark:text-zinc-400">{label}</p>
-      <p className="mt-1 text-lg font-medium tabular-nums">{value}</p>
-    </div>
+    <Link
+      href={`/strategies/${strategyId}/hands/${play.id}`}
+      className="grid grid-cols-[1fr_auto] gap-x-4 gap-y-1 py-3 text-sm transition hover:bg-zinc-50 dark:hover:bg-zinc-900 sm:grid-cols-[minmax(10rem,1fr)_auto_auto_auto_auto] sm:items-baseline sm:gap-x-5"
+    >
+      <span className="font-medium">{date} · {time}</span>
+      <span className="text-right text-xs tabular-nums text-zinc-500 dark:text-zinc-400">
+        {stats.hands} {stats.hands === 1 ? "hand" : "hands"}
+      </span>
+      <span className={stats.netBb >= 0 ? "text-right tabular-nums text-emerald-600 dark:text-emerald-400" : "text-right tabular-nums text-rose-600 dark:text-rose-400"}>
+        {stats.netBb >= 0 ? "+" : ""}{stats.netBb.toFixed(1)}bb
+      </span>
+      <span className="col-start-1 text-xs text-zinc-500 dark:text-zinc-400 sm:col-auto sm:text-right">
+        {stats.charted > 0 ? `${stats.accuracy.toFixed(0)}% right` : "no graded spots"}
+      </span>
+      <span className="text-right text-xs text-zinc-400 dark:text-zinc-500">
+        {stats.mistakes > 0 ? `${stats.mistakes} ${stats.mistakes === 1 ? "mistake" : "mistakes"}` : "clean"}
+      </span>
+    </Link>
   );
 }
 

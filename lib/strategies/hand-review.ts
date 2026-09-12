@@ -9,6 +9,7 @@ import { type Violation } from "../leaks";
 import { reviewPreflopCoverage, type StrategyPreflopDecision } from "./preflop-coverage";
 import type { Strategy } from "./index";
 import { matchesHandFilter } from "./hand-filter";
+import type { SessionHand } from "../sessions";
 
 const BATCH = 200;
 const REBUILD_PAGE = 250;
@@ -322,6 +323,94 @@ export interface StrategyReviewSummary {
   charted: number;
   mistakes: number;
   accuracy: number | null;
+}
+
+/** A stored hand as the strategy's session review needs to display it. */
+export interface StrategySessionHand extends SessionHand {
+  handClass: string | null;
+  cards: string[];
+}
+
+interface StrategySessionReviewRow {
+  hand_id: string;
+  charted_decisions: number;
+  mistake_count: number;
+  net_bb: number | null;
+  vpip: boolean;
+  pfr: boolean;
+}
+
+interface StrategySessionHandRow {
+  id: string;
+  ps_hand_id: string;
+  played_at: string;
+  position: string | null;
+  hand_class: string | null;
+  hero_cards: string[] | null;
+  saw_flop: boolean;
+  went_to_showdown: boolean;
+  won_at_showdown: boolean;
+  won: boolean;
+}
+
+/**
+ * The strategy's hands, ready to group into sittings.
+ *
+ * `strategy_hand_review` deliberately owns the verdict while `played_hand`
+ * owns the immutable hand facts. Keeping the two queries explicit makes that
+ * boundary visible and avoids a database-specific embedded join in a page.
+ */
+export async function loadStrategySessionHands(
+  supabase: SupabaseClient,
+  userId: string,
+  strategyId: string,
+): Promise<StrategySessionHand[]> {
+  const { data, error } = await supabase
+    .from("strategy_hand_review")
+    .select("hand_id, charted_decisions, mistake_count, net_bb, vpip, pfr")
+    .eq("user_id", userId)
+    .eq("strategy_id", strategyId);
+  if (error) fail(error, "Could not load strategy sessions");
+
+  const reviews = (data ?? []) as StrategySessionReviewRow[];
+  const factsById = new Map<string, StrategySessionHandRow>();
+  for (let from = 0; from < reviews.length; from += BATCH) {
+    const ids = reviews.slice(from, from + BATCH).map((review) => review.hand_id);
+    if (ids.length === 0) continue;
+    const { data: facts, error: factsError } = await supabase
+      .from("played_hand")
+      .select(
+        "id, ps_hand_id, played_at, position, hand_class, hero_cards, saw_flop, " +
+          "went_to_showdown, won_at_showdown, won",
+      )
+      .eq("user_id", userId)
+      .in("id", ids);
+    if (factsError) fail(factsError, "Could not load session hands");
+    for (const fact of (facts ?? []) as unknown as StrategySessionHandRow[]) {
+      factsById.set(fact.id, fact);
+    }
+  }
+
+  return reviews.flatMap((review) => {
+    const hand = factsById.get(review.hand_id);
+    if (!hand) return [];
+    return [{
+      psHandId: hand.ps_hand_id,
+      playedAt: new Date(hand.played_at),
+      netBb: review.net_bb ?? 0,
+      vpip: review.vpip,
+      pfr: review.pfr,
+      sawFlop: hand.saw_flop,
+      wentToShowdown: hand.went_to_showdown,
+      wonAtShowdown: hand.won_at_showdown,
+      won: hand.won,
+      chartedDecisions: review.charted_decisions,
+      mistakes: review.mistake_count,
+      position: hand.position,
+      handClass: hand.hand_class,
+      cards: hand.hero_cards ?? [],
+    }];
+  });
 }
 
 export interface StrategyCoverage {
