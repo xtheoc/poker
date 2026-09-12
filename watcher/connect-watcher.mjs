@@ -3,7 +3,7 @@
 import { createServer } from "node:http";
 import { createClient } from "@supabase/supabase-js";
 import { existsSync } from "node:fs";
-import { mkdir, readFile, writeFile } from "node:fs/promises";
+import { mkdir, readFile, unlink, writeFile } from "node:fs/promises";
 import { createInterface } from "node:readline/promises";
 import { spawn } from "node:child_process";
 import { homedir } from "node:os";
@@ -104,12 +104,16 @@ const startup = join(
   "Microsoft", "Windows", "Start Menu", "Programs", "Startup",
 );
 await mkdir(startup, { recursive: true });
-const launcher = join(startup, "Poker Study Hand Import.cmd");
+const launcher = join(startup, "Poker Study Hand Import.vbs");
 await writeFile(
   launcher,
-  `@echo off\r\nstart \"\" /b \"${process.execPath}\" \"${watcher}\" --config \"${configPath}\"\r\n`,
+  [
+    'Set shell = CreateObject("WScript.Shell")',
+    `shell.Run ${vbsString(`"${process.execPath}" "${watcher}" --config "${configPath}"`)}, 0, False`,
+  ].join("\r\n"),
   "utf8",
 );
+await unlink(join(startup, "Poker Study Hand Import.cmd")).catch(() => {});
 
 spawn(process.execPath, [watcher, "--config", configPath], {
   detached: true,
@@ -134,4 +138,8 @@ async function publicEnvironment(path) {
 function stop(message) {
   console.error(message);
   process.exit(1);
+}
+
+function vbsString(value) {
+  return `"${value.replace(/"/g, '""')}"`;
 }

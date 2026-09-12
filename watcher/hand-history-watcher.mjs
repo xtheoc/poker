@@ -47,7 +47,11 @@ function stop(message) {
 async function pokerStarsIsOpen() {
   if (process.platform !== "win32") return false;
   try {
-    const { stdout } = await execFileAsync("tasklist", ["/FI", "IMAGENAME eq PokerStars.exe", "/NH"]);
+    const { stdout } = await execFileAsync(
+      "tasklist",
+      ["/FI", "IMAGENAME eq PokerStars.exe", "/NH"],
+      { windowsHide: true },
+    );
     return /PokerStars\.exe/i.test(stdout);
   } catch {
     // If Windows cannot answer, leave files alone. A missed import retries on
