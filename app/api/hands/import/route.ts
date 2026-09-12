@@ -1,10 +1,12 @@
 import { revalidatePath } from "next/cache";
 import { NextResponse } from "next/server";
+import { createClient as createSupabaseClient } from "@supabase/supabase-js";
 import { z } from "zod";
 import { MissingTableError, importHands } from "@/lib/hands-store";
 import { BEGINNER_6MAX } from "@/lib/poker/charts/beginner-6max";
 import { optionalUser } from "@/lib/session";
 import { getAllStrategies } from "@/lib/strategies";
+import { requireSupabaseEnv } from "@/lib/supabase/env";
 import {
   MissingStrategyDecisionTablesError,
   MissingStrategyReviewTablesError,
@@ -39,10 +41,32 @@ const Body = z.object({
   text: z.string().min(1).max(MAX_CHARS),
 });
 
+/**
+ * Browser imports use the signed-in cookie. The local watcher refreshes a
+ * personal Supabase session and sends its short-lived access token instead.
+ * Both paths receive the same RLS-bound client, so automatic import can only
+ * ever write the connected user's rows; no database-wide key is involved.
+ */
+async function importSession(request: Request) {
+  const authorization = request.headers.get("authorization");
+  if (!authorization?.startsWith("Bearer ")) return optionalUser();
+
+  const accessToken = authorization.slice("Bearer ".length);
+  const env = requireSupabaseEnv();
+  const supabase = createSupabaseClient(env.url, env.anonKey, {
+    auth: { autoRefreshToken: false, persistSession: false },
+    global: { headers: { Authorization: `Bearer ${accessToken}` } },
+  });
+  const {
+    data: { user },
+  } = await supabase.auth.getUser(accessToken);
+  return user ? { supabase, userId: user.id } : null;
+}
+
 export async function POST(request: Request) {
   // A plain 401 rather than a redirect: this is called by fetch, and a redirect
   // would hand it an HTML login page to parse as JSON.
-  const session = await optionalUser();
+  const session = await importSession(request);
   if (!session) {
     return NextResponse.json(
       { error: "Sign in first — there is nowhere to save these otherwise." },

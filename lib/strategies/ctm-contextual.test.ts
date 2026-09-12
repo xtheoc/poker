@@ -49,6 +49,17 @@ describe("CTM contextual preflop dealer", () => {
     }
   });
 
+  it("draws from a broad deck instead of repeating the same teaching hands", () => {
+    let state = 29;
+    const rng = () => {
+      state = (state * 1_103_515_245 + 12_345) % 2_147_483_648;
+      return state / 2_147_483_648;
+    };
+    const spots = dealMixedContextualPreflopSession(150, rng);
+
+    expect(new Set(spots.map((spot) => spot.id)).size).toBeGreaterThan(25);
+  });
+
   it("uses the active big-blind sizing tree for opens, re-raises and squeezes", () => {
     const open = dealMixedContextualPreflopSession(5, () => 0.3)
       .find((spot) => spot.family === "open");

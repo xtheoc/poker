@@ -14,7 +14,6 @@ import {
   type ActionKind,
   type ChartSet,
   limpersFor,
-  offeredActions,
   wagersFor,
 } from "@/lib/poker/charts";
 import { type ActionGrade, gradeAction } from "@/lib/poker/grading";
@@ -506,9 +505,7 @@ export function QuickfireDrill({
       };
       const chosen = map[key];
       if (!chosen) return;
-      // Only keys for actions actually on screen. Ignoring a key whose button
-      // is visible would be the same bug in a different place.
-      if (!spot || !offeredActions(spot.node).includes(chosen)) return;
+      if (!spot) return;
       event.preventDefault();
       answer(chosen);
     }
@@ -550,8 +547,9 @@ export function QuickfireDrill({
   }
   if (!spot) return null;
 
-  // Read off the node, never guessed from its shape. See `offeredActions`.
-  const options = offeredActions(spot.node);
+  // Always show the same three choices. The decision tree may not prescribe a
+  // call in this spot, but hiding it would turn the interface into a hint.
+  const options: readonly ActionKind[] = ["fold", "call", "raise"];
 
   return (
     <div className="flex w-full flex-col items-center">
@@ -573,15 +571,16 @@ export function QuickfireDrill({
         </p>
       )}
 
-      <div className="mt-6 flex gap-2">
+      <div className="mt-6 flex w-full max-w-sm gap-2">
         {options.map((action) => (
           <button
             key={action}
             onClick={() => answer(action)}
             className={cn(
-              "w-28 rounded-xl border py-4 text-sm font-medium capitalize transition",
-              "border-zinc-300 dark:border-zinc-700",
-              !current && "hover:bg-zinc-100 dark:hover:bg-zinc-800",
+              "min-h-16 flex-1 rounded-xl border text-sm font-medium capitalize transition",
+              action === "fold" && "border-rose-700 bg-rose-700 text-white hover:bg-rose-600",
+              action === "call" && "border-zinc-700 bg-zinc-900 text-white hover:bg-zinc-800",
+              action === "raise" && "border-amber-600 bg-amber-500 text-zinc-950 hover:bg-amber-400",
               current?.chosen === action &&
                 (isRight(current)
                   ? "border-emerald-500 bg-emerald-500 text-white"
@@ -593,7 +592,7 @@ export function QuickfireDrill({
             )}
           >
             {action}
-            <span className="mt-1 block text-[10px] opacity-40">
+            <span className="mt-1 block text-[10px] opacity-45">
               {action[0].toUpperCase()}
             </span>
           </button>

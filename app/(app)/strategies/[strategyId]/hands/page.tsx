@@ -1,5 +1,7 @@
 import { notFound } from "next/navigation";
 import { ClipboardList, TrendingDown } from "lucide-react";
+import { HandHistoryWatcher } from "@/components/hand-history-watcher";
+import { HandImport } from "@/components/hand-import";
 import { LeakList } from "@/components/leak-list";
 import { MigrationNotice } from "@/components/migration-notice";
 import { StrategyHandReview } from "@/components/strategy-hand-review";
@@ -97,6 +99,22 @@ export default async function StrategyHandsPage({
         <Metric label="VPIP" value={percent(summary.vpip)} />
         <Metric label="PFR" value={percent(summary.pfr)} />
         <Metric label="Accuracy" value={percent(summary.accuracy)} />
+      </section>
+
+      <section className="mt-8">
+        <h2 className="text-sm font-semibold">Add hands</h2>
+        <div className="mt-3">
+          <HandHistoryWatcher
+          />
+        </div>
+        <details className="mt-4">
+          <summary className="cursor-pointer text-xs text-zinc-500 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100">
+            Import a file instead
+          </summary>
+          <div className="mt-3">
+            <HandImport signedIn />
+          </div>
+        </details>
       </section>
 
       <section className="mt-10 border-y border-zinc-200 py-5 dark:border-zinc-800">
