@@ -276,35 +276,39 @@ function PathRow({
   );
 }
 
-function FlopBranch({
-  when,
+function ProcessRoute({
+  answer,
   action,
   label,
+  next,
   children,
 }: {
-  when: string;
-  action: Action;
-  label: string;
-  children: React.ReactNode;
+  answer: string;
+  action?: Action;
+  label?: string;
+  next?: string;
+  children?: React.ReactNode;
 }) {
   return (
-    <div className="border-l-2 border-zinc-200 px-3 py-2.5 dark:border-zinc-800">
-      <p className="text-xs font-semibold leading-5 text-zinc-950 dark:text-white">{when}</p>
-      <div className="mt-2"><ActionMark action={action}>{label}</ActionMark></div>
-      <p className="mt-2 text-xs leading-5 text-zinc-500 dark:text-zinc-400">{children}</p>
+    <div className="grid gap-2 border-l-2 border-zinc-200 py-2.5 pl-3 dark:border-zinc-800 sm:grid-cols-[6.5rem_8.5rem_1fr] sm:items-center sm:gap-3">
+      <span className="font-mono text-[10px] font-semibold uppercase tracking-[0.14em] text-zinc-500 dark:text-zinc-400">{answer}</span>
+      {action ? (
+        <ActionMark action={action}>{label ?? action}</ActionMark>
+      ) : (
+        <span className="font-mono text-[10px] font-semibold uppercase tracking-[0.14em] text-sky-700 dark:text-sky-300">{next}</span>
+      )}
+      {children && <p className="text-xs leading-5 text-zinc-500 dark:text-zinc-400">{children}</p>}
     </div>
   );
 }
 
-function FlopStep({
+function ProcessStep({
   number,
   question,
-  columns = 2,
   children,
 }: {
   number: string;
   question: string;
-  columns?: 2 | 3;
   children: React.ReactNode;
 }) {
   return (
@@ -314,7 +318,7 @@ function FlopStep({
       </span>
       <div>
         <h3 className="text-base font-semibold tracking-tight">{question}</h3>
-        <div className={cn("mt-3 grid gap-2", columns === 3 ? "lg:grid-cols-3" : "md:grid-cols-2")}>{children}</div>
+        <div className="mt-3 divide-y divide-zinc-100 dark:divide-zinc-900">{children}</div>
       </div>
     </section>
   );
@@ -324,35 +328,36 @@ function FlopMap() {
   return (
     <div className="space-y-4">
       <Card title="Flop · decision order" Icon={ArrowRight}>
-        <FlopStep number="01" question="Did someone bet before you?">
-          <FlopBranch when="Tiny donk bet" action="check" label="Treat as check">
-            Do not panic. Raise 3× only against a frequent donk bettor (45%+) with a real hand or draw.
-          </FlopBranch>
-          <FlopBranch when="Normal flop bet" action="fold" label="Fold air">
-            Continue with a made hand or a real draw. Do not invent a bluff because they led.
-          </FlopBranch>
-        </FlopStep>
-        <FlopStep number="02" question="They checked to you. How many players remain?">
-          <FlopBranch when="Three or more players" action="check" label="Air checks">
-            Bet only top pair or a strong draw. Bluffing several players is not the default.
-          </FlopBranch>
-          <FlopBranch when="Heads-up" action="check" label="Use step 3">
-            Now decide whether you have a reason to bet. Do not bet merely because they checked.
-          </FlopBranch>
-        </FlopStep>
-        <FlopStep number="03" question="Do you have a real reason to bet?" columns={3}>
-          <FlopBranch when="Worse hands call" action="raise" label="Value bet">
-            Example: top pair against a player who calls weaker pairs and draws.
-          </FlopBranch>
-          <FlopBranch when="Better hands fold and you can improve" action="raise" label="Semi-bluff">
-            A real draw, or overcards with a draw. Name the turn card that helps first.
-          </FlopBranch>
-          <FlopBranch when="Neither is true" action="check" label="Check">
-            Keep the pot small. If you cannot name the caller or the helpful turn, do not bet.
-          </FlopBranch>
-        </FlopStep>
+        <div className="border-b border-zinc-200 py-4 text-sm leading-6 text-zinc-600 dark:border-zinc-800 dark:text-zinc-300">
+          Use this only when <strong className="font-semibold text-zinc-950 dark:text-white">you raised pre-flop</strong>. Start at 01. Follow one line at a time.
+        </div>
+        <ProcessStep number="01" question="Did villain bet before you?">
+          <ProcessRoute answer="No" next="Go to 03" />
+          <ProcessRoute answer="Yes" next="Go to 02" />
+        </ProcessStep>
+        <ProcessStep number="02" question="Is the bet tiny?">
+          <ProcessRoute answer="Yes" next="Go to 03">Treat a tiny donk bet like a check.</ProcessRoute>
+          <ProcessRoute answer="No" next="Go to 02A" />
+        </ProcessStep>
+        <ProcessStep number="02A" question="Do you have a made hand or a real draw?">
+          <ProcessRoute answer="Yes" action="call" label="Call" />
+          <ProcessRoute answer="No" action="fold" label="Fold" />
+        </ProcessStep>
+        <ProcessStep number="03" question="Are three or more players in the pot?">
+          <ProcessRoute answer="No" next="Go to 04" />
+          <ProcessRoute answer="Yes" next="Go to 03A" />
+        </ProcessStep>
+        <ProcessStep number="03A" question="Do you have top pair or a strong draw?">
+          <ProcessRoute answer="Yes" next="Go to 04" />
+          <ProcessRoute answer="No" action="check" label="Check" />
+        </ProcessStep>
+        <ProcessStep number="04" question="Why are you betting?">
+          <ProcessRoute answer="Worse hands call" action="raise" label="Value bet" />
+          <ProcessRoute answer="Better hands fold + you can improve" action="raise" label="Semi-bluff" />
+          <ProcessRoute answer="Neither" action="check" label="Check" />
+        </ProcessStep>
       </Card>
-      <Card title="Flop · c-bet size" Icon={Target}>
+      <Card title="05 · c-bet size" Icon={Target}>
         <SizingBand size="55%" label="Dry A/K-high" detail="Missed · two low cards · no flush draw" />
         <SizingBand size="60%" label="Default pressure" detail="Missed, but the board has high cards" />
         <SizingBand size="75%" label="Good hand" detail="Sticky regular" />
