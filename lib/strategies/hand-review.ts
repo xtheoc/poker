@@ -346,7 +346,7 @@ interface StrategySessionHandRow {
   played_at: string;
   position: string | null;
   hand_class: string | null;
-  hero_cards: string[] | null;
+  hero_cards: unknown;
   saw_flop: boolean;
   went_to_showdown: boolean;
   won_at_showdown: boolean;
@@ -408,7 +408,12 @@ export async function loadStrategySessionHands(
       mistakes: review.mistake_count,
       position: hand.position,
       handClass: hand.hand_class,
-      cards: hand.hero_cards ?? [],
+      // Older imports and PostgREST responses are external data at this point.
+      // A malformed card field must not make an otherwise valid session page
+      // fail to render; the hand class remains a useful fallback label.
+      cards: Array.isArray(hand.hero_cards)
+        ? hand.hero_cards.filter((card): card is string => typeof card === "string")
+        : [],
     }];
   });
 }
