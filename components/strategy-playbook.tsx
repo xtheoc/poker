@@ -276,14 +276,81 @@ function PathRow({
   );
 }
 
+function FlopBranch({
+  when,
+  action,
+  label,
+  children,
+}: {
+  when: string;
+  action: Action;
+  label: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <div className="border-l-2 border-zinc-200 px-3 py-2.5 dark:border-zinc-800">
+      <p className="text-xs font-semibold leading-5 text-zinc-950 dark:text-white">{when}</p>
+      <div className="mt-2"><ActionMark action={action}>{label}</ActionMark></div>
+      <p className="mt-2 text-xs leading-5 text-zinc-500 dark:text-zinc-400">{children}</p>
+    </div>
+  );
+}
+
+function FlopStep({
+  number,
+  question,
+  columns = 2,
+  children,
+}: {
+  number: string;
+  question: string;
+  columns?: 2 | 3;
+  children: React.ReactNode;
+}) {
+  return (
+    <section className="grid gap-3 border-t border-zinc-200 py-5 first:border-t-0 dark:border-zinc-800 sm:grid-cols-[2.25rem_minmax(0,1fr)] sm:gap-5">
+      <span className="flex size-7 items-center justify-center bg-zinc-100 font-mono text-[10px] font-medium text-zinc-500 dark:bg-zinc-900 dark:text-zinc-400">
+        {number}
+      </span>
+      <div>
+        <h3 className="text-base font-semibold tracking-tight">{question}</h3>
+        <div className={cn("mt-3 grid gap-2", columns === 3 ? "lg:grid-cols-3" : "md:grid-cols-2")}>{children}</div>
+      </div>
+    </section>
+  );
+}
+
 function FlopMap() {
   return (
     <div className="space-y-4">
-      <Card title="Flop · action order" Icon={ArrowRight}>
-        <PathRow number="01" when="They lead into you" action="check" then="Min-bet: treat it like a check. Frequent donk (45%+): raise 3× with equity." />
-        <PathRow number="02" when="Multiway" action="check" then="Continue only with top pair or a strong draw. Air checks." />
-        <PathRow number="03" when="Heads-up, wet board, air OOP vs fish / SLP" action="fold" then="Check. Fold to a real bet; do not bluff a caller." />
-        <PathRow number="04" when="Middle pair or weak top pair" action="call" then="Check-call. Keep the pot small; value bet a safe turn." />
+      <Card title="Flop · decision order" Icon={ArrowRight}>
+        <FlopStep number="01" question="Did someone bet before you?">
+          <FlopBranch when="Tiny donk bet" action="check" label="Treat as check">
+            Do not panic. Raise 3× only against a frequent donk bettor (45%+) with a real hand or draw.
+          </FlopBranch>
+          <FlopBranch when="Normal flop bet" action="fold" label="Fold air">
+            Continue with a made hand or a real draw. Do not invent a bluff because they led.
+          </FlopBranch>
+        </FlopStep>
+        <FlopStep number="02" question="They checked to you. How many players remain?">
+          <FlopBranch when="Three or more players" action="check" label="Air checks">
+            Bet only top pair or a strong draw. Bluffing several players is not the default.
+          </FlopBranch>
+          <FlopBranch when="Heads-up" action="check" label="Use step 3">
+            Now decide whether you have a reason to bet. Do not bet merely because they checked.
+          </FlopBranch>
+        </FlopStep>
+        <FlopStep number="03" question="Do you have a real reason to bet?" columns={3}>
+          <FlopBranch when="Worse hands call" action="raise" label="Value bet">
+            Example: top pair against a player who calls weaker pairs and draws.
+          </FlopBranch>
+          <FlopBranch when="Better hands fold and you can improve" action="raise" label="Semi-bluff">
+            A real draw, or overcards with a draw. Name the turn card that helps first.
+          </FlopBranch>
+          <FlopBranch when="Neither is true" action="check" label="Check">
+            Keep the pot small. If you cannot name the caller or the helpful turn, do not bet.
+          </FlopBranch>
+        </FlopStep>
       </Card>
       <Card title="Flop · c-bet size" Icon={Target}>
         <SizingBand size="55%" label="Dry A/K-high" detail="Missed · two low cards · no flush draw" />
