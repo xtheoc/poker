@@ -81,7 +81,7 @@ export default async function StrategySessionPage({
               : hand.chartedDecisions > 0
                 ? "correct"
                 : "not covered";
-            const cards = hand.handClass ?? "—";
+            const handLabel = `Hand #${hand.psHandId.slice(-6)}`;
 
             return (
               <li key={hand.psHandId} className="px-1 py-3 text-sm sm:grid sm:grid-cols-[4.5rem_1fr_3rem_4.5rem] sm:items-center sm:gap-x-3 sm:px-2">
@@ -90,7 +90,7 @@ export default async function StrategySessionPage({
                   {hand.playedAt.toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit" })}
                 </span>
                 <span className="flex-1 sm:flex-none">
-                  <span className="font-mono font-medium">{cards}</span>
+                  <span className="font-mono font-medium">{handLabel}</span>
                 </span>
                 <span className="text-xs text-zinc-500 dark:text-zinc-400">{hand.position ?? "—"}</span>
                 <span className={cn(

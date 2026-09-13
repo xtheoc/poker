@@ -24,8 +24,6 @@
 /** One hand, reduced to what a session review needs from it. */
 export interface SessionHand {
   psHandId: string;
-  /** Your two-card class, when the imported history contained hole cards. */
-  handClass?: string | null;
   playedAt: Date;
   /** Profit or loss in big blinds. */
   netBb: number;
