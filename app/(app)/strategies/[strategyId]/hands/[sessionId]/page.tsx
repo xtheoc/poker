@@ -2,10 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { StrategyNav } from "@/components/strategy-nav";
 import { getLearningStrategy } from "@/lib/strategies";
-import {
-  loadStrategySessionHands,
-  type StrategySessionHand,
-} from "@/lib/strategies/hand-review";
+import { loadSessionHands } from "@/lib/hands-store";
 import { requireUser } from "@/lib/session";
 import { groupSessions, sessionContaining, statsFor } from "@/lib/sessions";
 import { cn } from "@/lib/utils";
@@ -28,14 +25,12 @@ export default async function StrategySessionPage({
   if (!strategy) notFound();
 
   const session = await requireUser();
-  const hands = await loadStrategySessionHands(
+  const hands = await loadSessionHands(
     session.supabase,
     session.userId,
-    strategy.id,
   );
   const play = sessionContaining(groupSessions(hands), sessionId);
   if (!play) notFound();
-  const reviewedHands = play.hands as StrategySessionHand[];
 
   const stats = statsFor(play.hands);
   const title = play.startedAt.toLocaleDateString(undefined, {
@@ -80,13 +75,13 @@ export default async function StrategySessionPage({
           <span className="text-right">Result</span>
         </div>
         <ul className="divide-y divide-zinc-200 dark:divide-zinc-800">
-          {reviewedHands.map((hand) => {
+          {play.hands.map((hand) => {
             const status = hand.mistakes > 0
               ? "needs review"
               : hand.chartedDecisions > 0
                 ? "correct"
                 : "not covered";
-            const cards = hand.cards.length > 0 ? hand.cards.join(" ") : hand.handClass ?? "—";
+            const cards = hand.handClass ?? "—";
 
             return (
               <li key={hand.psHandId} className="px-1 py-3 text-sm sm:grid sm:grid-cols-[4.5rem_1fr_3rem_4.5rem] sm:items-center sm:gap-x-3 sm:px-2">

@@ -106,6 +106,7 @@ export interface ImportOptions {
 interface HandRow {
   id: string;
   ps_hand_id: string;
+  hand_class: string | null;
   played_at: string;
   net_bb: number | null;
   vpip: boolean;
@@ -358,7 +359,7 @@ export async function loadSessionHands(
   const { data, error } = await supabase
     .from("played_hand")
     .select(
-      "ps_hand_id, played_at, net_bb, vpip, pfr, saw_flop, went_to_showdown, " +
+      "ps_hand_id, hand_class, played_at, net_bb, vpip, pfr, saw_flop, went_to_showdown, " +
         "won_at_showdown, won, charted_decisions, position",
     )
     .eq("user_id", userId)
@@ -372,6 +373,7 @@ export async function loadSessionHands(
 
   return rows.map((row) => ({
     psHandId: row.ps_hand_id,
+    handClass: row.hand_class,
     playedAt: new Date(row.played_at),
     netBb: row.net_bb ?? 0,
     vpip: row.vpip,

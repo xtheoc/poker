@@ -2,15 +2,10 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import { HandHistoryWatcher } from "@/components/hand-history-watcher";
 import { HandImport } from "@/components/hand-import";
-import { MigrationNotice } from "@/components/migration-notice";
 import { StrategyHandReview } from "@/components/strategy-hand-review";
 import { StrategyNav } from "@/components/strategy-nav";
 import { getLearningStrategy } from "@/lib/strategies";
-import {
-  loadStrategyReviewSummary,
-  MissingStrategyReviewTablesError,
-  loadStrategySessionHands,
-} from "@/lib/strategies/hand-review";
+import { loadSessionHands } from "@/lib/hands-store";
 import { optionalUser } from "@/lib/session";
 import { groupSessions, statsFor, type PlaySession } from "@/lib/sessions";
 
@@ -36,30 +31,9 @@ export default async function StrategyHandsPage({
     );
   }
 
-  let summary;
-  let hands;
-  try {
-    [summary, hands] = await Promise.all([
-      loadStrategyReviewSummary(session.supabase, session.userId, strategy.id),
-      loadStrategySessionHands(session.supabase, session.userId, strategy.id),
-    ]);
-  } catch (error) {
-    if (error instanceof MissingStrategyReviewTablesError) {
-      return (
-        <main className="mx-auto w-full max-w-4xl px-5 py-8 sm:px-8 sm:py-10">
-          <StrategyNav strategyId={strategy.id} strategyName={strategy.name} />
-          <div className="mt-10">
-            <MigrationNotice
-              file="0010_strategy_hand_reviews.sql"
-              what="strategy-specific hand reviews"
-            />
-          </div>
-        </main>
-      );
-    }
-    throw error;
-  }
+  const hands = await loadSessionHands(session.supabase, session.userId);
   const sessions = groupSessions(hands);
+  const summary = statsFor(hands);
 
   return (
     <main className="mx-auto w-full max-w-4xl px-5 py-8 sm:px-8 sm:py-10">
@@ -69,9 +43,9 @@ export default async function StrategyHandsPage({
       <section className="mt-6 grid grid-cols-3 border-y border-zinc-200 dark:border-zinc-800 sm:mt-8 sm:grid-cols-5">
         <Metric label="Hands" value={String(summary.hands)} />
         <Metric label="Net" value={`${summary.netBb >= 0 ? "+" : ""}${summary.netBb.toFixed(1)}bb`} />
-        <Metric label="Accuracy" value={percent(summary.accuracy)} />
-        <Metric className="hidden sm:block" label="VPIP" value={percent(summary.vpip)} />
-        <Metric className="hidden sm:block" label="PFR" value={percent(summary.pfr)} />
+        <Metric label="Accuracy" value={summary.charted > 0 ? `${summary.accuracy.toFixed(1)}%` : "-"} />
+        <Metric className="hidden sm:block" label="VPIP" value={`${summary.vpip.value.toFixed(1)}%`} />
+        <Metric className="hidden sm:block" label="PFR" value={`${summary.pfr.value.toFixed(1)}%`} />
       </section>
 
       <section className="mt-8">
@@ -177,8 +151,4 @@ function SessionRow({
       </div>
     </Link>
   );
-}
-
-function percent(value: number | null): string {
-  return value === null ? "-" : `${value.toFixed(1)}%`;
 }
