@@ -351,10 +351,14 @@ function FlopMap() {
           <ProcessRoute answer="Yes" next="Go to 04" />
           <ProcessRoute answer="No" action="check" label="Check" />
         </ProcessStep>
-        <ProcessStep number="04" question="Why are you betting?">
-          <ProcessRoute answer="Worse hands call" action="raise" label="Value bet" />
-          <ProcessRoute answer="Better hands fold + you can improve" action="raise" label="Semi-bluff" />
-          <ProcessRoute answer="Neither" action="check" label="Check" />
+        <ProcessStep number="04" question="Can you name a reason to bet?">
+          <ProcessRoute answer="Name one worse hand that calls" action="raise" label="Value bet">
+            If you cannot name it, do not call this a value bet.
+          </ProcessRoute>
+          <ProcessRoute answer="Name one better hand that folds + one turn that helps" action="raise" label="Semi-bluff">
+            You need both: fold equity now and a real way to improve later.
+          </ProcessRoute>
+          <ProcessRoute answer="Cannot name either" action="check" label="Check" />
         </ProcessStep>
       </Card>
       <Card title="05 · c-bet size" Icon={Target}>

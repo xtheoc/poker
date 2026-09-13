@@ -175,11 +175,11 @@ export const CTM_NL2_LEARNING: StrategyLearningSystem = {
       id: "flop-plan", title: "Flop: follow the process", summary: "Ask one question at a time. Every answer sends you to the next step or ends the hand.", prerequisites: ["four-bet-tree"],
       assets: [
         { id: "facing-a-bet", kind: "rewrite", title: "01–02. Did villain bet before you?", body: "No: go to 03.\n\nYes: ask whether the bet is tiny. Tiny: treat it as a check and go to 03. Not tiny: you continue only with a made hand or a real draw. Otherwise, fold.", sources: [book([130, 141], "Planning a hand and c-bet exceptions")] },
-        { id: "checked-to-you", kind: "rewrite", title: "03–04. They checked to you", body: "03. Three or more players? With top pair or a strong draw, go to 04. With anything else, check. Heads-up? Go straight to 04.\n\n04. Why bet? Worse hands call: value bet. Better hands can fold and you can improve: semi-bluff. Neither: check.", sources: [book([130, 151], "Planning a hand and c-bet exceptions")] },
+        { id: "checked-to-you", kind: "rewrite", title: "03–04. They checked to you", body: "03. Three or more players? With top pair or a strong draw, go to 04. With anything else, check. Heads-up? Go straight to 04.\n\n04. Ask two questions. Can you name one worse hand that calls? Value bet. If not, can you name one better hand that folds and one turn card that improves you? Semi-bluff. If you cannot name either set, check.", sources: [book([130, 151], "Planning a hand and c-bet exceptions")] },
         { id: "cbet-sizes", kind: "rewrite", title: "05. Choose the c-bet size", body: "55%: dry ace- or king-high board, you missed, two low cards, no flush draw. 60%: your usual bluff size.\n\n75%: good hand against a sticky regular. 100%: top pair good kicker or better against a fish or SLP. 150%: a monster against a calling station.", sources: [book([132, 151], "C-bet plans and sizing")] },
       ],
       mastery: [{ kind: "drill", drillId: "flop-plan", minimumRuns: 2, minimumAccuracy: 85 }],
-      playbook: [{ id: "flop", heading: "Flop process", takeaway: "01. Bet before you? 02. Tiny? 03. Multiway? 04. Value, semi-bluff, or check? 05. Size the bet.", sources: [book([130, 151], "Flop")]}],
+      playbook: [{ id: "flop", heading: "Flop process", takeaway: "01. Bet before you? 02. Tiny? 03. Multiway? 04. Name a worse caller, or a better folder plus an improving turn. Otherwise check. 05. Size the bet.", sources: [book([130, 151], "Flop")]}],
     },
     {
       id: "after-the-cbet", title: "Flop: after you bet", summary: "A normal raise, min-raise and call are three different branches.", prerequisites: ["flop-plan"],
