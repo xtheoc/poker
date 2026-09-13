@@ -327,41 +327,44 @@ function ProcessStep({
 function FlopMap() {
   return (
     <div className="space-y-4">
-      <Card title="Flop · decision order" Icon={ArrowRight}>
+      <Card title="Flop · choice map" Icon={ArrowRight}>
         <div className="border-b border-zinc-200 py-4 text-sm leading-6 text-zinc-600 dark:border-zinc-800 dark:text-zinc-300">
-          Use this only when <strong className="font-semibold text-zinc-950 dark:text-white">you raised pre-flop</strong>. Start at 01. Follow one line at a time.
+          Use this only when <strong className="font-semibold text-zinc-950 dark:text-white">you raised pre-flop</strong>. Start in the lane that matches what happened on the flop.
         </div>
-        <ProcessStep number="01" question="Did villain bet before you?">
-          <ProcessRoute answer="No" next="Go to 03" />
-          <ProcessRoute answer="Yes" next="Go to 02" />
-        </ProcessStep>
-        <ProcessStep number="02" question="Is the bet tiny?">
-          <ProcessRoute answer="Yes" next="Go to 03">Treat a tiny donk bet like a check.</ProcessRoute>
-          <ProcessRoute answer="No" next="Go to 02A" />
-        </ProcessStep>
-        <ProcessStep number="02A" question="Do you have a made hand or a real draw?">
-          <ProcessRoute answer="Yes" action="call" label="Call" />
-          <ProcessRoute answer="No" action="fold" label="Fold" />
-        </ProcessStep>
-        <ProcessStep number="03" question="Are three or more players in the pot?">
-          <ProcessRoute answer="No" next="Go to 04" />
-          <ProcessRoute answer="Yes" next="Go to 03A" />
-        </ProcessStep>
-        <ProcessStep number="03A" question="Do you have top pair or a strong draw?">
-          <ProcessRoute answer="Yes" next="Go to 04" />
-          <ProcessRoute answer="No" action="check" label="Check" />
-        </ProcessStep>
-        <ProcessStep number="04" question="Can you name a reason to bet?">
-          <ProcessRoute answer="Name one worse hand that calls" action="raise" label="Value bet">
-            If you cannot name it, do not call this a value bet.
-          </ProcessRoute>
-          <ProcessRoute answer="Name one better hand that folds + one turn that helps" action="raise" label="Semi-bluff">
-            You need both: fold equity now and a real way to improve later.
-          </ProcessRoute>
-          <ProcessRoute answer="Cannot name either" action="check" label="Check" />
-        </ProcessStep>
+        <div className="grid divide-y divide-zinc-200 dark:divide-zinc-800 lg:grid-cols-2 lg:divide-x lg:divide-y-0">
+          <section className="py-5 lg:pr-6">
+            <p className="font-mono text-[10px] font-semibold uppercase tracking-[0.16em] text-sky-700 dark:text-sky-300">Lane A · It checks to you</p>
+            <ProcessStep number="A1" question="Are three or more players in the pot?">
+              <ProcessRoute answer="No" next="→ A3" />
+              <ProcessRoute answer="Yes" next="→ A2" />
+            </ProcessStep>
+            <ProcessStep number="A2" question="Do you have top pair or a strong draw?">
+              <ProcessRoute answer="Yes" next="→ A3" />
+              <ProcessRoute answer="No" action="check" label="Check" />
+            </ProcessStep>
+            <ProcessStep number="A3" question="Can you name a reason to bet?">
+              <ProcessRoute answer="One worse hand calls" action="raise" label="Value bet → size" />
+              <ProcessRoute answer="One better hand folds + one turn helps" action="raise" label="Semi-bluff → size" />
+              <ProcessRoute answer="Cannot name either" action="check" label="Check" />
+            </ProcessStep>
+          </section>
+          <section className="py-5 lg:pl-6">
+            <p className="font-mono text-[10px] font-semibold uppercase tracking-[0.16em] text-violet-700 dark:text-violet-300">Lane B · Someone bets first</p>
+            <ProcessStep number="B1" question="Is their bet tiny?">
+              <ProcessRoute answer="Yes" next="→ Use lane A">Treat a tiny donk bet like a check.</ProcessRoute>
+              <ProcessRoute answer="No" next="→ B2" />
+            </ProcessStep>
+            <ProcessStep number="B2" question="Do you have a made hand or a real draw?">
+              <ProcessRoute answer="Yes" action="call" label="Call" />
+              <ProcessRoute answer="No" action="fold" label="Fold" />
+            </ProcessStep>
+          </section>
+        </div>
       </Card>
       <Card title="05 · c-bet size" Icon={Target}>
+        <div className="border-b border-zinc-200 py-4 text-sm leading-6 text-zinc-600 dark:border-zinc-800 dark:text-zinc-300">
+          Use this table only after Lane A ends in <strong className="font-semibold text-amber-700 dark:text-amber-400">BET</strong>. It chooses the amount; it does not decide whether to bet.
+        </div>
         <SizingBand size="55%" label="Dry A/K-high" detail="Missed · two low cards · no flush draw" />
         <SizingBand size="60%" label="Default pressure" detail="Missed, but the board has high cards" />
         <SizingBand size="75%" label="Good hand" detail="Sticky regular" />
