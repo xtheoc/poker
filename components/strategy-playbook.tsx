@@ -11,16 +11,17 @@ import {
 import type { PlaybookEntry } from "@/lib/strategies/learning";
 import { cn } from "@/lib/utils";
 
-type Action = "fold" | "call" | "raise";
+type Action = "fold" | "call" | "raise" | "check";
 
 const ACTION_STYLE: Record<Action, string> = {
   fold: "border-rose-500/30 bg-rose-500/10 text-rose-500 dark:text-rose-400",
   call: "border-emerald-500/30 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400",
   raise: "border-amber-500/30 bg-amber-500/10 text-amber-700 dark:text-amber-400",
+  check: "border-zinc-300 bg-zinc-100 text-zinc-600 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-300",
 };
 
 function ActionMark({ action, children }: { action: Action; children: React.ReactNode }) {
-  const Icon = action === "fold" ? X : action === "call" ? Check : ArrowUpRight;
+  const Icon = action === "fold" ? X : action === "call" ? Check : action === "raise" ? ArrowUpRight : EyeOff;
   return (
     <span
       className={cn(
@@ -252,6 +253,84 @@ function FourBetMap() {
   );
 }
 
+function PathRow({
+  number,
+  when,
+  action,
+  then,
+}: {
+  number: string;
+  when: string;
+  action: Action;
+  then: React.ReactNode;
+}) {
+  return (
+    <div className="grid gap-2 border-t border-zinc-200 py-3.5 first:border-t-0 dark:border-zinc-800 sm:grid-cols-[2rem_minmax(10rem,0.75fr)_auto_1.25fr] sm:items-center sm:gap-3">
+      <span className="flex size-6 items-center justify-center rounded-full bg-zinc-100 font-mono text-[10px] font-medium text-zinc-500 dark:bg-zinc-900 dark:text-zinc-400">
+        {number}
+      </span>
+      <p className="text-sm font-semibold leading-5 tracking-tight">{when}</p>
+      <ActionMark action={action}>{action === "raise" ? "Bet" : action}</ActionMark>
+      <p className="text-sm leading-5 text-zinc-600 dark:text-zinc-300">{then}</p>
+    </div>
+  );
+}
+
+function FlopMap() {
+  return (
+    <div className="space-y-4">
+      <Card title="Flop · action order" Icon={ArrowRight}>
+        <PathRow number="01" when="They lead into you" action="check" then="Min-bet: treat it like a check. Frequent donk (45%+): raise 3× with equity." />
+        <PathRow number="02" when="Multiway" action="check" then="Continue only with top pair or a strong draw. Air checks." />
+        <PathRow number="03" when="Heads-up, wet board, air OOP vs fish / SLP" action="fold" then="Check. Fold to a real bet; do not bluff a caller." />
+        <PathRow number="04" when="Middle pair or weak top pair" action="call" then="Check-call. Keep the pot small; value bet a safe turn." />
+      </Card>
+      <Card title="Flop · c-bet size" Icon={Target}>
+        <Band label="55%"><Token tone="sky">dry A/K-high</Token><span className="text-xs text-zinc-500">missed · two low cards · no flush draw</span></Band>
+        <Band label="60%"><Token tone="sky">default pressure</Token><span className="text-xs text-zinc-500">missed, but board has high cards</span></Band>
+        <Band label="75%"><Token tone="violet">good hand</Token><span className="text-xs text-zinc-500">sticky regular</span></Band>
+        <Band label="100%"><Token tone="violet">top pair+ </Token><span className="text-xs text-zinc-500">fish / SLP calls too much</span></Band>
+        <Band label="150%"><Token tone="violet">monster</Token><span className="text-xs text-zinc-500">calling station</span></Band>
+      </Card>
+    </div>
+  );
+}
+
+function CbetResponseMap() {
+  return (
+    <Card title="After your c-bet" Icon={CircleDot}>
+      <PathRow number="01" when="They make a real raise" action="fold" then="Fold, including one-pair hands. NL2 raises are value-heavy." />
+      <PathRow number="02" when="They min-raise" action="call" then="Only in position with middle pair or top pair. Air folds." />
+      <PathRow number="03" when="They call · fold-to-c-bet 70%+" action="fold" then="Their call is strong: top pair or a big draw. Stop bluffing." />
+      <PathRow number="04" when="They call · fold-to-c-bet 59% or less" action="raise" then="They are sticky. Keep value betting; their call alone says little." />
+    </Card>
+  );
+}
+
+function TurnMap() {
+  return (
+    <Card title="Turn · action order" Icon={ArrowRight}>
+      <PathRow number="01" when="No top pair, overpair or good draw" action="fold" then="Stop investing. A tiny bet is the only reason to continue." />
+      <PathRow number="02" when="Top pair / small overpair vs fish or SLP" action="raise" then="Bet 75% pot for value." />
+      <PathRow number="03" when="Top pair / small overpair vs TAG" action="check" then="Check or check-fold. Keep the pot controlled." />
+      <PathRow number="04" when="Two pair or better" action="raise" then="Bet 75%+ against everyone." />
+      <PathRow number="05" when="They raise or lead big" action="fold" then="If your hand cannot beat two pair, fold by default." />
+    </Card>
+  );
+}
+
+function RiverMap() {
+  return (
+    <Card title="River · action order" Icon={ArrowRight}>
+      <PathRow number="01" when="No pair" action="fold" then="Give up. Exception: fish bets 1/4 pot, draws miss, AJ-high+ can call." />
+      <PathRow number="02" when="Top pair" action="raise" then="Bet about 2/3 pot. Bet bigger against fish / SLP." />
+      <PathRow number="03" when="Middle pair" action="raise" then="Value bet fish / SLP. Check against TAG unless your kicker is great." />
+      <PathRow number="04" when="Facing a normal river bet" action="call" then="AF 1: fold. AF 2+: call only on a safe card. Pot-size or overbet: fold." />
+      <PathRow number="05" when="They raise your bet 3×+" action="fold" then="Fold. A fish min-raising a small pot is the named exception." />
+    </Card>
+  );
+}
+
 function DecisionRow({
   number,
   question,
@@ -366,6 +445,10 @@ function visualFor(entry: PlaybookEntry): React.ReactNode {
   if (entry.id === "squeeze") return <SqueezeMap />;
   if (entry.id === "vs-3bet") return <ThreeBetMap />;
   if (entry.id === "vs-4bet") return <FourBetMap />;
+  if (entry.id === "flop") return <FlopMap />;
+  if (entry.id === "cbet-response") return <CbetResponseMap />;
+  if (entry.id === "turn") return <TurnMap />;
+  if (entry.id === "river") return <RiverMap />;
   return <Fallback entry={entry} />;
 }
 
