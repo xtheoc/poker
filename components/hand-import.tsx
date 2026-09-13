@@ -67,11 +67,11 @@ export function chunkHistory(text: string, maxChars = CHUNK_CHARS): string[] {
 
 export function HandImport({
   signedIn,
-  sessionHref = (id) => `/hands/session/${id}`,
+  sessionBasePath = "/hands/session",
 }: {
   signedIn: boolean;
   /** Lets a strategy workspace return to its own session review. */
-  sessionHref?: (id: string) => string;
+  sessionBasePath?: string;
 }) {
   const router = useRouter();
   const [busy, setBusy] = useState(false);
@@ -188,17 +188,17 @@ export function HandImport({
         </p>
       )}
 
-      {result && <Summary result={result} sessionHref={sessionHref} />}
+      {result && <Summary result={result} sessionBasePath={sessionBasePath} />}
     </div>
   );
 }
 
 function Summary({
   result,
-  sessionHref,
+  sessionBasePath,
 }: {
   result: ImportResult;
-  sessionHref: (id: string) => string;
+  sessionBasePath: string;
 }) {
   const fresh = result.stored - result.duplicates;
 
@@ -227,7 +227,7 @@ function Summary({
       </p>
       {result.latestHandId && (
         <Link
-          href={sessionHref(result.latestHandId)}
+          href={`${sessionBasePath}/${result.latestHandId}`}
           className="mt-3 inline-block rounded-lg bg-emerald-600 px-3 py-1.5 text-xs font-medium text-white"
         >
           See the session review

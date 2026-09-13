@@ -75,7 +75,7 @@ export default async function StrategyHandsPage({
           <div className="mt-3">
             <HandImport
               signedIn
-              sessionHref={(id) => `/strategies/${strategy.id}/hands/${id}`}
+              sessionBasePath={`/strategies/${strategy.id}/hands`}
             />
           </div>
         </details>
