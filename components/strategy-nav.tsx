@@ -25,14 +25,14 @@ export function StrategyNav({
   const root = `/strategies/${strategyId}`;
 
   return (
-    <header className="border-b border-zinc-200 pb-5 dark:border-zinc-800">
+    <header className="border-b border-zinc-200 pb-5 dark:border-zinc-800 sm:pb-6">
       <Link
         href={root}
         className="text-xs font-medium uppercase tracking-[0.14em] text-zinc-500 transition hover:text-zinc-950 dark:hover:text-white"
       >
         {strategyName}
       </Link>
-      <nav aria-label={`${strategyName} navigation`} className="mt-4 flex items-center justify-between gap-1 overflow-x-auto pb-0.5 sm:justify-start">
+      <nav aria-label={`${strategyName} navigation`} className="mt-4 flex items-center justify-between gap-1 overflow-x-auto pb-0.5 sm:gap-2 sm:justify-start">
         {ITEMS.map(({ suffix, label, Icon }) => {
           const href = `${root}${suffix}`;
           const active = suffix
@@ -43,7 +43,7 @@ export function StrategyNav({
               key={suffix || "overview"}
               href={href}
               className={cn(
-                "inline-flex shrink-0 items-center justify-center gap-1.5 border-b-2 px-2.5 py-2 text-sm transition sm:px-2 sm:py-1.5",
+                "inline-flex shrink-0 items-center justify-center gap-1.5 border-b-2 px-2.5 py-2 text-sm transition sm:px-3 sm:py-2",
                 active
                   ? "border-zinc-950 font-medium text-zinc-950 dark:border-white dark:text-white"
                   : "border-transparent text-zinc-500 hover:text-zinc-950 dark:hover:text-zinc-200",

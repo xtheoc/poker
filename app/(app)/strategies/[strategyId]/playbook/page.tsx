@@ -22,7 +22,7 @@ export default async function StrategyPlaybookPage({
     .filter((lesson) => masteredIds.has(lesson.id))
     .flatMap((lesson) => lesson.playbook);
   return (
-    <main className="mx-auto w-full max-w-4xl px-5 py-8 sm:px-8 sm:py-10">
+    <main className="app-shell app-shell--reading">
       <StrategyNav strategyId={strategy.id} strategyName={strategy.name} />
       <div className="mt-10 flex items-end justify-between border-b border-zinc-200 pb-5 dark:border-zinc-800">
         <div>

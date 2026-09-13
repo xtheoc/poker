@@ -23,7 +23,7 @@ export function SiteNav({
 
   return (
     <header className="sticky top-0 z-20 border-b border-zinc-200 bg-white/80 backdrop-blur dark:border-zinc-800 dark:bg-zinc-950/80">
-      <nav className="mx-auto flex w-full max-w-5xl items-center gap-1 px-4 py-2">
+      <nav className="mx-auto flex w-full max-w-[96rem] items-center gap-1 px-4 py-2 sm:px-8 lg:px-14">
         <Link
           href="/"
           className={cn(

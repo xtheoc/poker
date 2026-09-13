@@ -24,7 +24,7 @@ export default async function StrategyLessonPage({
   const sources = new Map(strategy.learning.sources.map((source) => [source.id, source]));
 
   return (
-    <main className="mx-auto w-full max-w-4xl px-5 py-8 sm:px-8 sm:py-10">
+    <main className="app-shell app-shell--reading">
       <StrategyNav strategyId={strategy.id} strategyName={strategy.name} />
       <Link
         href={`/strategies/${strategy.id}/learn`}
@@ -39,14 +39,14 @@ export default async function StrategyLessonPage({
       </div>
 
       {item.lesson.playbook.length > 0 && (
-        <div className="mt-8 max-w-3xl">
+        <div className="mt-8 max-w-6xl">
           {item.lesson.playbook.map((entry) => (
             <StrategyPlaybookEntry key={entry.id} entry={entry} />
           ))}
         </div>
       )}
 
-      <div className="mt-12 max-w-3xl space-y-10">
+      <div className="mt-12 max-w-5xl space-y-10">
         {item.lesson.assets.map((asset, index) => (
           <article key={asset.id} className="grid gap-3 border-t border-zinc-200 pt-6 dark:border-zinc-800 sm:grid-cols-[5.5rem_1fr] sm:gap-6">
             <div className="flex items-center gap-2 font-mono text-[10px] font-medium uppercase tracking-[0.14em] text-zinc-400 dark:text-zinc-500 sm:block">
@@ -86,7 +86,7 @@ export default async function StrategyLessonPage({
         </div>
       )}
 
-      <section className="mt-14 max-w-3xl rounded-lg border border-zinc-200 bg-zinc-50/70 p-5 dark:border-zinc-800 dark:bg-zinc-900/30 sm:flex sm:items-center sm:justify-between sm:gap-8">
+      <section className="mt-14 max-w-5xl border border-zinc-200 bg-zinc-50/70 p-5 dark:border-zinc-800 dark:bg-zinc-900/30 sm:flex sm:items-center sm:justify-between sm:gap-8">
         <div>
           <div className="flex items-center gap-2 text-sm text-zinc-500">
             <Target className="size-4" aria-hidden="true" />

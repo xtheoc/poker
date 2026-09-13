@@ -24,10 +24,34 @@ body {
   color: var(--foreground);
   font-family: var(--font-geist-sans), Arial, Helvetica, sans-serif;
   text-rendering: optimizeLegibility;
+  min-height: 100dvh;
 }
 
 button,
 a,
 input {
   -webkit-tap-highlight-color: transparent;
+}
+
+.app-shell {
+  width: 100%;
+  max-width: 96rem;
+  margin-inline: auto;
+  padding: 1.5rem 1rem 3rem;
+}
+
+.app-shell--reading {
+  max-width: 88rem;
+}
+
+@media (min-width: 640px) {
+  .app-shell {
+    padding: 2.5rem 2.5rem 4rem;
+  }
+}
+
+@media (min-width: 1024px) {
+  .app-shell {
+    padding-inline: 3.5rem;
+  }
 }

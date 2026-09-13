@@ -17,7 +17,7 @@ export default async function Home() {
   return (
     <>
       <SiteNav email={session?.email ?? null} />
-      <main className="mx-auto w-full max-w-6xl px-5 py-12 sm:px-8 sm:py-16">
+      <main className="app-shell">
         <header className="max-w-2xl border-b border-zinc-200 pb-8 dark:border-zinc-800">
           <p className="font-mono text-[10px] font-medium uppercase tracking-[0.18em] text-zinc-500">Poker study</p>
           <h1 className="mt-3 text-4xl font-semibold tracking-tight sm:text-5xl">Strategies</h1>

@@ -17,7 +17,7 @@ export default async function StrategyLearnPage({
   const map = learningMap(strategy.learning, progress);
 
   return (
-    <main className="mx-auto w-full max-w-3xl px-5 py-8 sm:px-8 sm:py-10">
+    <main className="app-shell app-shell--reading">
       <StrategyNav strategyId={strategy.id} strategyName={strategy.name} />
       <div className="mt-10 flex flex-wrap items-end justify-between gap-4">
         <div>

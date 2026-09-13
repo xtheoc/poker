@@ -19,7 +19,7 @@ export default async function StrategyHandsPage({
   const session = await optionalUser();
   if (!session) {
     return (
-      <main className="mx-auto w-full max-w-4xl px-5 py-8 sm:px-8 sm:py-10">
+      <main className="app-shell">
         <StrategyNav strategyId={strategy.id} strategyName={strategy.name} />
         <header className="mt-10">
           <h1 className="text-4xl font-semibold tracking-tight">Hands</h1>
@@ -36,7 +36,7 @@ export default async function StrategyHandsPage({
   const summary = statsFor(hands);
 
   return (
-    <main className="mx-auto w-full max-w-4xl px-5 py-8 sm:px-8 sm:py-10">
+    <main className="app-shell">
       <StrategyNav strategyId={strategy.id} strategyName={strategy.name} />
       <h1 className="mt-8 text-3xl font-semibold tracking-tight sm:mt-10 sm:text-4xl">Hands</h1>
 

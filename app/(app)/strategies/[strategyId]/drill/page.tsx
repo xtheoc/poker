@@ -92,7 +92,7 @@ export default async function StrategyDrillPage({
   }
   if (!signedIn) {
     return (
-      <main className="mx-auto w-full max-w-2xl px-5 py-8 sm:px-8 sm:py-10">
+      <main className="app-shell">
         <h1 className="text-3xl font-semibold tracking-tight">Sign in to learn</h1>
         <p className="mt-3 text-sm text-zinc-500 dark:text-zinc-400">
           Your completed drills unlock the next lesson and build your playbook.
@@ -127,7 +127,7 @@ export default async function StrategyDrillPage({
   if (mistakes !== undefined) {
     if (mistakeTargets.length === 0) {
       return (
-        <main className="mx-auto w-full max-w-3xl px-5 py-8 sm:px-8 sm:py-10">
+        <main className="app-shell">
           <StrategyNav strategyId={strategy.id} strategyName={strategy.name} />
           <div className="mt-12 border-y border-zinc-200 py-12 text-center dark:border-zinc-800">
             <h1 className="text-3xl font-semibold tracking-tight">No mistakes yet</h1>
@@ -196,7 +196,7 @@ export default async function StrategyDrillPage({
   if (typeof exercise === "string") {
     if (exercise === "preflop" && preflopCircuit.length > 0) {
       return (
-        <main className="mx-auto w-full max-w-xl px-5 py-8 sm:px-8 sm:py-10">
+        <main className="app-shell">
           <StrategyNav strategyId={strategy.id} strategyName={strategy.name} />
           <div className="mt-8 flex items-baseline justify-between border-b border-zinc-200 pb-4 dark:border-zinc-800">
             <p className="font-mono text-[10px] font-medium uppercase tracking-[0.15em] text-zinc-500">
@@ -219,7 +219,7 @@ export default async function StrategyDrillPage({
         (node) => node.key.scenario === "rfi" && node.key.position !== "BB",
       );
       return (
-        <main className="mx-auto w-full max-w-3xl px-5 py-8 sm:px-8 sm:py-10">
+        <main className="app-shell">
           <StrategyNav strategyId={strategy.id} strategyName={strategy.name} />
           <div className="mt-10">
             <StrategyPracticeCircuit
@@ -243,7 +243,7 @@ export default async function StrategyDrillPage({
 
   if (requestedLesson === undefined && availableDrills.length > 0) {
     return (
-      <main className="mx-auto w-full max-w-4xl px-5 py-8 sm:px-8 sm:py-10">
+      <main className="app-shell">
         <StrategyNav strategyId={strategy.id} strategyName={strategy.name} />
         <header className="mt-10 border-b border-zinc-200 pb-8 dark:border-zinc-800">
           <p className="font-mono text-[10px] font-medium uppercase tracking-[0.16em] text-zinc-500">Practice</p>
@@ -329,7 +329,7 @@ export default async function StrategyDrillPage({
   if (!active) {
     const needsSetup = map.some((item) => item.state === "locked");
     return (
-      <main className="mx-auto w-full max-w-2xl px-5 py-8 sm:px-8 sm:py-10">
+      <main className="app-shell">
         <StrategyNav strategyId={strategy.id} strategyName={strategy.name} />
         <h1 className="text-3xl font-semibold tracking-tight">
           {needsSetup ? "Finish setup first" : "Preflop complete"}
@@ -355,7 +355,7 @@ export default async function StrategyDrillPage({
   );
   if (!requirement) {
     return (
-      <main className="mx-auto w-full max-w-2xl px-5 py-8 sm:px-8 sm:py-10">
+      <main className="app-shell">
         <StrategyNav strategyId={strategy.id} strategyName={strategy.name} />
         <h1 className="text-3xl font-semibold tracking-tight">Coming next</h1>
         <p className="mt-3 text-sm text-zinc-500 dark:text-zinc-400">
@@ -374,7 +374,7 @@ export default async function StrategyDrillPage({
   );
 
   return (
-    <main className="mx-auto w-full max-w-3xl px-5 py-8 sm:px-8 sm:py-10">
+    <main className="app-shell">
       <StrategyNav strategyId={strategy.id} strategyName={strategy.name} />
       <div className="flex items-baseline justify-between gap-4">
         <div>

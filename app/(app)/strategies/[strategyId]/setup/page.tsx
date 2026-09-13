@@ -16,7 +16,7 @@ export default async function StrategySetupPage({
   const { progress, signedIn, migrationMissing } = await strategyProgressPageData(strategy.id);
 
   return (
-    <main className="mx-auto w-full max-w-2xl px-5 py-8 sm:px-8 sm:py-10">
+    <main className="app-shell">
       <StrategyNav strategyId={strategy.id} strategyName={strategy.name} />
       <div className="mt-10 max-w-xl">
         <div className="flex items-center gap-2 text-xs font-medium uppercase tracking-[0.14em] text-zinc-500">

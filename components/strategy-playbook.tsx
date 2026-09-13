@@ -14,10 +14,10 @@ import { cn } from "@/lib/utils";
 type Action = "fold" | "call" | "raise" | "check";
 
 const ACTION_STYLE: Record<Action, string> = {
-  fold: "border-rose-500/30 bg-rose-500/10 text-rose-500 dark:text-rose-400",
-  call: "border-emerald-500/30 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400",
-  raise: "border-amber-500/30 bg-amber-500/10 text-amber-700 dark:text-amber-400",
-  check: "border-zinc-300 bg-zinc-100 text-zinc-600 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-300",
+  fold: "border-rose-500 bg-rose-500/[0.04] text-rose-600 dark:text-rose-400",
+  call: "border-emerald-500 bg-emerald-500/[0.04] text-emerald-700 dark:text-emerald-400",
+  raise: "border-amber-500 bg-amber-500/[0.04] text-amber-700 dark:text-amber-400",
+  check: "border-zinc-400 bg-zinc-500/[0.04] text-zinc-600 dark:border-zinc-600 dark:text-zinc-300",
 };
 
 function ActionMark({ action, children }: { action: Action; children: React.ReactNode }) {
@@ -25,7 +25,7 @@ function ActionMark({ action, children }: { action: Action; children: React.Reac
   return (
     <span
       className={cn(
-        "inline-flex min-h-8 items-center gap-1.5 rounded-md border px-2.5 text-xs font-semibold uppercase tracking-[0.1em]",
+        "inline-flex min-h-7 items-center gap-1.5 border-l-2 px-2.5 font-mono text-[10px] font-semibold uppercase tracking-[0.14em]",
         ACTION_STYLE[action],
       )}
     >
@@ -62,14 +62,14 @@ function Card({
   children: React.ReactNode;
 }) {
   return (
-    <section className="overflow-hidden rounded-lg border border-zinc-200 bg-white shadow-[0_1px_0_rgba(0,0,0,0.03)] dark:border-zinc-800 dark:bg-zinc-950">
-      <div className="flex items-center gap-3 border-b border-zinc-100 bg-zinc-50/60 px-5 py-3.5 dark:border-zinc-900 dark:bg-zinc-900/30">
-        <span className="flex size-7 items-center justify-center rounded-md bg-zinc-900 text-white dark:bg-white dark:text-zinc-950">
+    <section className="overflow-hidden border border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-950">
+      <div className="flex items-center gap-3 border-b border-zinc-100 bg-zinc-50/60 px-5 py-4 dark:border-zinc-900 dark:bg-zinc-900/30 sm:px-6">
+        <span className="flex size-7 items-center justify-center bg-zinc-900 text-white dark:bg-white dark:text-zinc-950">
           <Icon className="size-3.5" aria-hidden="true" />
         </span>
         <h2 className="text-sm font-semibold tracking-tight">{title}</h2>
       </div>
-      <div className="px-5">{children}</div>
+      <div className="px-5 sm:px-6">{children}</div>
     </section>
   );
 }
@@ -265,13 +265,13 @@ function PathRow({
   then: React.ReactNode;
 }) {
   return (
-    <div className="grid gap-2 border-t border-zinc-200 py-3.5 first:border-t-0 dark:border-zinc-800 sm:grid-cols-[2rem_minmax(10rem,0.75fr)_auto_1.25fr] sm:items-center sm:gap-3">
-      <span className="flex size-6 items-center justify-center rounded-full bg-zinc-100 font-mono text-[10px] font-medium text-zinc-500 dark:bg-zinc-900 dark:text-zinc-400">
+    <div className="grid gap-3 border-t border-zinc-200 py-4 first:border-t-0 dark:border-zinc-800 sm:grid-cols-[2.25rem_minmax(12rem,0.85fr)_7rem_minmax(18rem,1.35fr)] sm:items-center sm:gap-5">
+      <span className="flex size-7 items-center justify-center bg-zinc-100 font-mono text-[10px] font-medium text-zinc-500 dark:bg-zinc-900 dark:text-zinc-400">
         {number}
       </span>
       <p className="text-sm font-semibold leading-5 tracking-tight">{when}</p>
       <ActionMark action={action}>{action === "raise" ? "Bet" : action}</ActionMark>
-      <p className="text-sm leading-5 text-zinc-600 dark:text-zinc-300">{then}</p>
+      <p className="text-sm leading-6 text-zinc-600 dark:text-zinc-300">{then}</p>
     </div>
   );
 }
@@ -286,12 +286,30 @@ function FlopMap() {
         <PathRow number="04" when="Middle pair or weak top pair" action="call" then="Check-call. Keep the pot small; value bet a safe turn." />
       </Card>
       <Card title="Flop · c-bet size" Icon={Target}>
-        <Band label="55%"><Token tone="sky">dry A/K-high</Token><span className="text-xs text-zinc-500">missed · two low cards · no flush draw</span></Band>
-        <Band label="60%"><Token tone="sky">default pressure</Token><span className="text-xs text-zinc-500">missed, but board has high cards</span></Band>
-        <Band label="75%"><Token tone="violet">good hand</Token><span className="text-xs text-zinc-500">sticky regular</span></Band>
-        <Band label="100%"><Token tone="violet">top pair+ </Token><span className="text-xs text-zinc-500">fish / SLP calls too much</span></Band>
-        <Band label="150%"><Token tone="violet">monster</Token><span className="text-xs text-zinc-500">calling station</span></Band>
+        <SizingBand size="55%" label="Dry A/K-high" detail="Missed · two low cards · no flush draw" />
+        <SizingBand size="60%" label="Default pressure" detail="Missed, but the board has high cards" />
+        <SizingBand size="75%" label="Good hand" detail="Sticky regular" />
+        <SizingBand size="100%" label="Top pair+" detail="Fish / SLP calls too much" />
+        <SizingBand size="150%" label="Monster" detail="Calling station" />
       </Card>
+    </div>
+  );
+}
+
+function SizingBand({
+  size,
+  label,
+  detail,
+}: {
+  size: string;
+  label: string;
+  detail: string;
+}) {
+  return (
+    <div className="grid grid-cols-[4.75rem_1fr] gap-x-4 border-t border-zinc-200 py-3.5 first:border-t-0 dark:border-zinc-800 sm:grid-cols-[6rem_minmax(10rem,0.75fr)_1.25fr] sm:items-center sm:gap-x-6">
+      <span className="font-mono text-lg font-semibold tabular-nums tracking-tight text-amber-700 dark:text-amber-400">{size}</span>
+      <span className="text-sm font-semibold tracking-tight">{label}</span>
+      <span className="col-start-2 mt-1 text-xs leading-5 text-zinc-500 dark:text-zinc-400 sm:col-start-auto sm:mt-0">{detail}</span>
     </div>
   );
 }

@@ -50,7 +50,7 @@ export default async function StrategyPage({
   }
 
   return (
-    <main className="mx-auto w-full max-w-5xl px-5 py-8 sm:px-8 sm:py-10">
+    <main className="app-shell">
       <StrategyNav strategyId={strategy.id} strategyName={strategy.name} />
       <header className="mt-10 border-b border-zinc-200 pb-8 dark:border-zinc-800">
         <p className="font-mono text-[10px] font-medium uppercase tracking-[0.16em] text-zinc-500">Active strategy</p>
