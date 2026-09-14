@@ -276,135 +276,62 @@ function PathRow({
   );
 }
 
-function ProcessRoute({
-  answer,
+function FlopRule({
+  when,
+  hand,
   action,
-  label,
-  next,
-  children,
+  size,
 }: {
-  answer: string;
-  action?: Action;
-  label?: string;
-  next?: string;
-  children?: React.ReactNode;
+  when: string;
+  hand: string;
+  action: Action;
+  size?: string;
 }) {
   return (
-    <div className="grid gap-2 border-l-2 border-zinc-200 py-2.5 pl-3 dark:border-zinc-800 sm:grid-cols-[6.5rem_8.5rem_1fr] sm:items-center sm:gap-3">
-      <span className="font-mono text-[10px] font-semibold uppercase tracking-[0.14em] text-zinc-500 dark:text-zinc-400">{answer}</span>
-      {action ? (
-        <ActionMark action={action}>{label ?? action}</ActionMark>
-      ) : (
-        <span className="font-mono text-[10px] font-semibold uppercase tracking-[0.14em] text-sky-700 dark:text-sky-300">{next}</span>
-      )}
-      {children && <p className="text-xs leading-5 text-zinc-500 dark:text-zinc-400">{children}</p>}
+    <div className="grid gap-2 border-t border-zinc-200 py-3.5 first:border-t-0 dark:border-zinc-800 sm:grid-cols-[9rem_minmax(0,1fr)_auto] sm:items-center sm:gap-5">
+      <span className="font-mono text-[10px] font-medium uppercase tracking-[0.12em] text-zinc-400 dark:text-zinc-500">{when}</span>
+      <span className="text-sm font-semibold tracking-tight">{hand}</span>
+      <div className="flex items-center gap-2">
+        <ActionMark action={action}>{action === "raise" ? "Bet" : action}</ActionMark>
+        {size && <span className="font-mono text-sm font-semibold tabular-nums text-amber-700 dark:text-amber-400">{size}</span>}
+      </div>
     </div>
   );
 }
 
-function ProcessStep({
-  number,
-  question,
-  children,
-}: {
-  number: string;
-  question: string;
-  children: React.ReactNode;
-}) {
+function FlopSection({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <section className="grid gap-3 border-t border-zinc-200 py-5 first:border-t-0 dark:border-zinc-800 sm:grid-cols-[2.25rem_minmax(0,1fr)] sm:gap-5">
-      <span className="flex size-7 items-center justify-center bg-zinc-100 font-mono text-[10px] font-medium text-zinc-500 dark:bg-zinc-900 dark:text-zinc-400">
-        {number}
-      </span>
-      <div>
-        <h3 className="text-base font-semibold tracking-tight">{question}</h3>
-        <div className="mt-3 divide-y divide-zinc-100 dark:divide-zinc-900">{children}</div>
-      </div>
+    <section className="border-t border-zinc-200 first:border-t-0 dark:border-zinc-800">
+      <h3 className="px-5 pt-5 font-mono text-[10px] font-semibold uppercase tracking-[0.16em] text-sky-700 dark:text-sky-300 sm:px-6">{title}</h3>
+      <div className="px-5 pb-2 pt-3 sm:px-6">{children}</div>
     </section>
   );
 }
 
 function FlopMap() {
   return (
-    <div className="space-y-4">
-      <Card title="Flop · choice map" Icon={ArrowRight}>
-        <div className="border-b border-zinc-200 py-4 text-sm leading-6 text-zinc-600 dark:border-zinc-800 dark:text-zinc-300">
-          Use this only when <strong className="font-semibold text-zinc-950 dark:text-white">you raised pre-flop</strong>. Start in the lane that matches what happened on the flop.
-        </div>
-        <div className="grid divide-y divide-zinc-200 dark:divide-zinc-800 lg:grid-cols-2 lg:divide-x lg:divide-y-0">
-          <section className="py-5 lg:pr-6">
-            <p className="font-mono text-[10px] font-semibold uppercase tracking-[0.16em] text-sky-700 dark:text-sky-300">Lane A · It checks to you</p>
-            <ProcessStep number="A1" question="Are three or more players in the pot?">
-              <ProcessRoute answer="No" next="→ A3" />
-              <ProcessRoute answer="Yes" next="→ A2" />
-            </ProcessStep>
-            <ProcessStep number="A2" question="Do you have top pair or a strong draw (flush / open-ended straight draw)?">
-              <ProcessRoute answer="Yes" action="raise" label="Bet → size" />
-              <ProcessRoute answer="No" action="check" label="Check" />
-            </ProcessStep>
-            <ProcessStep number="A3" question="Is villain a fish or SLP?">
-              <ProcessRoute answer="Yes" next="→ A4" />
-              <ProcessRoute answer="No" next="→ A5" />
-            </ProcessStep>
-            <ProcessStep number="A4" question="Do you have top pair or better?">
-              <ProcessRoute answer="Yes" action="raise" label="Bet → size" />
-              <ProcessRoute answer="No" action="check" label="Check" />
-            </ProcessStep>
-            <ProcessStep number="A5" question="Do you have top pair or better?">
-              <ProcessRoute answer="Yes" action="raise" label="Bet → size" />
-              <ProcessRoute answer="No" next="→ A6" />
-            </ProcessStep>
-            <ProcessStep number="A6" question="Do you have a strong draw (flush / open-ended straight draw)?">
-              <ProcessRoute answer="Yes" action="raise" label="Bet → size" />
-              <ProcessRoute answer="No" next="→ A7" />
-            </ProcessStep>
-            <ProcessStep number="A7" question="Did you miss a dry A/K-high board (two low cards, no flush draw)?">
-              <ProcessRoute answer="Yes" action="raise" label="Bet 55%" />
-              <ProcessRoute answer="No" action="check" label="Check" />
-            </ProcessStep>
-          </section>
-          <section className="py-5 lg:pl-6">
-            <p className="font-mono text-[10px] font-semibold uppercase tracking-[0.16em] text-violet-700 dark:text-violet-300">Lane B · Someone bets first</p>
-            <ProcessStep number="B1" question="Is their bet tiny?">
-              <ProcessRoute answer="Yes" next="→ Use lane A">Treat a tiny donk bet like a check.</ProcessRoute>
-              <ProcessRoute answer="No" next="→ B2" />
-            </ProcessStep>
-            <ProcessStep number="B2" question="Do you have a made hand or a real draw?">
-              <ProcessRoute answer="Yes" action="call" label="Call" />
-              <ProcessRoute answer="No" action="fold" label="Fold" />
-            </ProcessStep>
-          </section>
-        </div>
-      </Card>
-      <Card title="If you reached BET: choose the first matching size" Icon={Target}>
-        <div className="border-b border-zinc-200 py-4 text-sm leading-6 text-zinc-600 dark:border-zinc-800 dark:text-zinc-300">
-          Read from top to bottom. Use the <strong className="font-semibold text-amber-700 dark:text-amber-400">first rule that fits</strong>, then stop. This chooses the amount; the choice map decides whether to bet.
-        </div>
-        <SizingRule number="01" when="Monster vs calling station" size="150%" />
-        <SizingRule number="02" when="Top pair+ vs fish / SLP" size="100%" />
-        <SizingRule number="03" when="Good made hand vs sticky regular" size="75%" />
-        <SizingRule number="04" when="Strong draw" size="60%" />
-        <SizingRule number="05" when="Missed dry A/K-high board" size="55%" />
-      </Card>
-    </div>
-  );
-}
-
-function SizingRule({
-  number,
-  when,
-  size,
-}: {
-  size: string;
-  number: string;
-  when: string;
-}) {
-  return (
-    <div className="grid grid-cols-[2.5rem_1fr_auto] items-center gap-3 border-t border-zinc-200 py-3.5 first:border-t-0 dark:border-zinc-800 sm:grid-cols-[3.5rem_1fr_5.5rem] sm:gap-5">
-      <span className="font-mono text-[10px] font-medium tracking-[0.14em] text-zinc-400 dark:text-zinc-500">{number}</span>
-      <span className="text-sm font-semibold tracking-tight">{when}</span>
-      <span className="border-l-2 border-amber-500 bg-amber-500/[0.04] px-2.5 py-1 font-mono text-sm font-semibold tabular-nums text-amber-700 dark:text-amber-400">{size}</span>
-    </div>
+    <Card title="Flop" Icon={ArrowRight}>
+      <FlopSection title="3+ players · it checks">
+        <FlopRule when="top pair+ / draw" hand="flush draw or open-ender" action="raise" size="60%" />
+        <FlopRule when="everything else" hand="" action="check" />
+      </FlopSection>
+      <FlopSection title="Heads-up · fish / SLP · it checks">
+        <FlopRule when="monster" hand="calling station" action="raise" size="150%" />
+        <FlopRule when="top pair+" hand="" action="raise" size="100%" />
+        <FlopRule when="everything else" hand="" action="check" />
+      </FlopSection>
+      <FlopSection title="Heads-up · regular · it checks">
+        <FlopRule when="good hand" hand="" action="raise" size="75%" />
+        <FlopRule when="strong draw" hand="flush draw or open-ender" action="raise" size="60%" />
+        <FlopRule when="dry A/K miss" hand="two low cards · no flush draw" action="raise" size="55%" />
+        <FlopRule when="everything else" hand="" action="check" />
+      </FlopSection>
+      <FlopSection title="They bet first">
+        <FlopRule when="tiny bet" hand="use the matching row above" action="check" />
+        <FlopRule when="normal bet" hand="made hand / real draw" action="call" />
+        <FlopRule when="normal bet" hand="everything else" action="fold" />
+      </FlopSection>
+    </Card>
   );
 }
 

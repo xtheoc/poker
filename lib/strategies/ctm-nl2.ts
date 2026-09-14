@@ -172,14 +172,14 @@ export const CTM_NL2_LEARNING: StrategyLearningSystem = {
       playbook: [{ id: "vs-4bet", heading: "When they four-bet", takeaway: "At normal 100bb depth, continue with AA and KK; fold the rest. The deep nit cold-four-bet is a named exception, not a routine call-down.", sources: [book([109, 111], "Facing a four-bet")]}],
     },
     {
-      id: "flop-plan", title: "Flop: use the two routes", summary: "Start with whether it checks to you or someone bets first. Then follow that route only.", prerequisites: ["four-bet-tree"],
+      id: "flop-plan", title: "Flop: use the action sheet", summary: "Match the spot, hand and opponent to one action and one size.", prerequisites: ["four-bet-tree"],
       assets: [
-        { id: "checked-to-you", kind: "rewrite", title: "Lane A. It checks to you", body: "Three or more players? Bet only top pair or a strong draw. Everything else checks.\n\nHeads-up against a fish or SLP? Bet top pair or better. Everything else checks.\n\nHeads-up against anyone else? Bet top pair or better. If not, bet a strong draw. If not, bluff only a dry ace- or king-high board that you missed. Otherwise, check.", sources: [book([130, 151], "Planning a hand and c-bet exceptions")] },
-        { id: "facing-a-bet", kind: "rewrite", title: "Lane B. Someone bets first", body: "Tiny bet: treat it as a check and use Lane A.\n\nNormal bet: made hand or real draw, call. Anything else, fold.", sources: [book([130, 141], "Planning a hand and c-bet exceptions")] },
-        { id: "cbet-sizes", kind: "rewrite", title: "Only after you choose BET: pick the first matching size", body: "The size chart does not tell you whether to bet. Lane A decides that first.\n\nRead in order: monster versus calling station, 150%. Top pair or better versus fish or SLP, 100%. Good made hand versus sticky regular, 75%. Strong draw, 60%. Missed dry ace- or king-high board, 55%.", sources: [book([132, 151], "C-bet plans and sizing")] },
+        { id: "checked-to-you", kind: "rewrite", title: "When it checks to you", body: "Three or more players: top pair or a strong draw, bet 60%. Otherwise, check.\n\nHeads-up versus fish or SLP: top pair or better, bet 100%. Monster versus a calling station, bet 150%. Otherwise, check.\n\nHeads-up versus a regular: good hand, 75%. Strong draw, 60%. Missed dry ace- or king-high board, 55%. Otherwise, check.", sources: [book([130, 151], "Planning a hand and c-bet exceptions")] },
+        { id: "facing-a-bet", kind: "rewrite", title: "When they bet first", body: "Tiny bet: ignore it and use the action sheet.\n\nNormal bet: call with a made hand or real draw. Fold everything else.", sources: [book([130, 141], "Planning a hand and c-bet exceptions")] },
+        { id: "cbet-sizes", kind: "rewrite", title: "The sizes", body: "150%: monster versus calling station. 100%: top pair or better versus fish or SLP. 75%: good hand versus regular. 60%: strong draw or multiway continuation. 55%: missed dry ace- or king-high board.", sources: [book([132, 151], "C-bet plans and sizing")] },
       ],
       mastery: [{ kind: "drill", drillId: "flop-plan", minimumRuns: 2, minimumAccuracy: 85 }],
-      playbook: [{ id: "flop", heading: "Flop choice map", takeaway: "Lane A: first classify multiway, player type and hand. Lane B: tiny bet uses Lane A; normal bet is made hand/draw or fold. Use the first matching sizing rule only after BET.", sources: [book([130, 151], "Flop")]}],
+      playbook: [{ id: "flop", heading: "Flop action sheet", takeaway: "Match the spot and hand to the row. Action and size stay together. Tiny bet: use the matching row. Normal bet: made hand or draw calls; everything else folds.", sources: [book([130, 151], "Flop")]}],
     },
     {
       id: "after-the-cbet", title: "Flop: after you bet", summary: "A normal raise, min-raise and call are three different branches.", prerequisites: ["flop-plan"],
