@@ -338,14 +338,29 @@ function FlopMap() {
               <ProcessRoute answer="No" next="→ A3" />
               <ProcessRoute answer="Yes" next="→ A2" />
             </ProcessStep>
-            <ProcessStep number="A2" question="Do you have top pair or a strong draw?">
-              <ProcessRoute answer="Yes" next="→ A3" />
+            <ProcessStep number="A2" question="Do you have top pair or a strong draw (flush / open-ended straight draw)?">
+              <ProcessRoute answer="Yes" action="raise" label="Bet → size" />
               <ProcessRoute answer="No" action="check" label="Check" />
             </ProcessStep>
-            <ProcessStep number="A3" question="Can you name a reason to bet?">
-              <ProcessRoute answer="One worse hand calls" action="raise" label="Value bet → size" />
-              <ProcessRoute answer="One better hand folds + one turn helps" action="raise" label="Semi-bluff → size" />
-              <ProcessRoute answer="Cannot name either" action="check" label="Check" />
+            <ProcessStep number="A3" question="Is villain a fish or SLP?">
+              <ProcessRoute answer="Yes" next="→ A4" />
+              <ProcessRoute answer="No" next="→ A5" />
+            </ProcessStep>
+            <ProcessStep number="A4" question="Do you have top pair or better?">
+              <ProcessRoute answer="Yes" action="raise" label="Bet → size" />
+              <ProcessRoute answer="No" action="check" label="Check" />
+            </ProcessStep>
+            <ProcessStep number="A5" question="Do you have top pair or better?">
+              <ProcessRoute answer="Yes" action="raise" label="Bet → size" />
+              <ProcessRoute answer="No" next="→ A6" />
+            </ProcessStep>
+            <ProcessStep number="A6" question="Do you have a strong draw (flush / open-ended straight draw)?">
+              <ProcessRoute answer="Yes" action="raise" label="Bet → size" />
+              <ProcessRoute answer="No" next="→ A7" />
+            </ProcessStep>
+            <ProcessStep number="A7" question="Did you miss a dry A/K-high board (two low cards, no flush draw)?">
+              <ProcessRoute answer="Yes" action="raise" label="Bet 55%" />
+              <ProcessRoute answer="No" action="check" label="Check" />
             </ProcessStep>
           </section>
           <section className="py-5 lg:pl-6">
@@ -361,34 +376,34 @@ function FlopMap() {
           </section>
         </div>
       </Card>
-      <Card title="05 · c-bet size" Icon={Target}>
+      <Card title="If you reached BET: choose the first matching size" Icon={Target}>
         <div className="border-b border-zinc-200 py-4 text-sm leading-6 text-zinc-600 dark:border-zinc-800 dark:text-zinc-300">
-          Use this table only after Lane A ends in <strong className="font-semibold text-amber-700 dark:text-amber-400">BET</strong>. It chooses the amount; it does not decide whether to bet.
+          Read from top to bottom. Use the <strong className="font-semibold text-amber-700 dark:text-amber-400">first rule that fits</strong>, then stop. This chooses the amount; the choice map decides whether to bet.
         </div>
-        <SizingBand size="55%" label="Dry A/K-high" detail="Missed · two low cards · no flush draw" />
-        <SizingBand size="60%" label="Default pressure" detail="Missed, but the board has high cards" />
-        <SizingBand size="75%" label="Good hand" detail="Sticky regular" />
-        <SizingBand size="100%" label="Top pair+" detail="Fish / SLP calls too much" />
-        <SizingBand size="150%" label="Monster" detail="Calling station" />
+        <SizingRule number="01" when="Monster vs calling station" size="150%" />
+        <SizingRule number="02" when="Top pair+ vs fish / SLP" size="100%" />
+        <SizingRule number="03" when="Good made hand vs sticky regular" size="75%" />
+        <SizingRule number="04" when="Strong draw" size="60%" />
+        <SizingRule number="05" when="Missed dry A/K-high board" size="55%" />
       </Card>
     </div>
   );
 }
 
-function SizingBand({
+function SizingRule({
+  number,
+  when,
   size,
-  label,
-  detail,
 }: {
   size: string;
-  label: string;
-  detail: string;
+  number: string;
+  when: string;
 }) {
   return (
-    <div className="grid grid-cols-[4.75rem_1fr] gap-x-4 border-t border-zinc-200 py-3.5 first:border-t-0 dark:border-zinc-800 sm:grid-cols-[6rem_minmax(10rem,0.75fr)_1.25fr] sm:items-center sm:gap-x-6">
-      <span className="font-mono text-lg font-semibold tabular-nums tracking-tight text-amber-700 dark:text-amber-400">{size}</span>
-      <span className="text-sm font-semibold tracking-tight">{label}</span>
-      <span className="col-start-2 mt-1 text-xs leading-5 text-zinc-500 dark:text-zinc-400 sm:col-start-auto sm:mt-0">{detail}</span>
+    <div className="grid grid-cols-[2.5rem_1fr_auto] items-center gap-3 border-t border-zinc-200 py-3.5 first:border-t-0 dark:border-zinc-800 sm:grid-cols-[3.5rem_1fr_5.5rem] sm:gap-5">
+      <span className="font-mono text-[10px] font-medium tracking-[0.14em] text-zinc-400 dark:text-zinc-500">{number}</span>
+      <span className="text-sm font-semibold tracking-tight">{when}</span>
+      <span className="border-l-2 border-amber-500 bg-amber-500/[0.04] px-2.5 py-1 font-mono text-sm font-semibold tabular-nums text-amber-700 dark:text-amber-400">{size}</span>
     </div>
   );
 }
