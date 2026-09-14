@@ -253,53 +253,32 @@ function FourBetMap() {
   );
 }
 
-function PathRow({
-  number,
-  when,
-  action,
-  then,
-}: {
-  number: string;
-  when: string;
-  action: Action;
-  then: React.ReactNode;
-}) {
-  return (
-    <div className="grid gap-3 border-t border-zinc-200 py-4 first:border-t-0 dark:border-zinc-800 sm:grid-cols-[2.25rem_minmax(12rem,0.85fr)_7rem_minmax(18rem,1.35fr)] sm:items-center sm:gap-5">
-      <span className="flex size-7 items-center justify-center bg-zinc-100 font-mono text-[10px] font-medium text-zinc-500 dark:bg-zinc-900 dark:text-zinc-400">
-        {number}
-      </span>
-      <p className="text-sm font-semibold leading-5 tracking-tight">{when}</p>
-      <ActionMark action={action}>{action === "raise" ? "Bet" : action}</ActionMark>
-      <p className="text-sm leading-6 text-zinc-600 dark:text-zinc-300">{then}</p>
-    </div>
-  );
-}
-
-function FlopRule({
+function ActionSheetRule({
   when,
   hand,
   action,
   size,
+  label,
 }: {
   when: string;
   hand: string;
   action: Action;
   size?: string;
+  label?: string;
 }) {
   return (
     <div className="grid gap-2 border-t border-zinc-200 py-3.5 first:border-t-0 dark:border-zinc-800 sm:grid-cols-[9rem_minmax(0,1fr)_auto] sm:items-center sm:gap-5">
       <span className="font-mono text-[10px] font-medium uppercase tracking-[0.12em] text-zinc-400 dark:text-zinc-500">{when}</span>
       <span className="text-sm font-semibold tracking-tight">{hand}</span>
       <div className="flex items-center gap-2">
-        <ActionMark action={action}>{action === "raise" ? "Bet" : action}</ActionMark>
+        <ActionMark action={action}>{label ?? (action === "raise" ? "Bet" : action)}</ActionMark>
         {size && <span className="font-mono text-sm font-semibold tabular-nums text-amber-700 dark:text-amber-400">{size}</span>}
       </div>
     </div>
   );
 }
 
-function FlopSection({ title, children }: { title: string; children: React.ReactNode }) {
+function ActionSheetSection({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <section className="border-t border-zinc-200 first:border-t-0 dark:border-zinc-800">
       <h3 className="px-5 pt-5 font-mono text-[10px] font-semibold uppercase tracking-[0.16em] text-sky-700 dark:text-sky-300 sm:px-6">{title}</h3>
@@ -311,61 +290,70 @@ function FlopSection({ title, children }: { title: string; children: React.React
 function FlopMap() {
   return (
     <Card title="Flop" Icon={ArrowRight}>
-      <FlopSection title="3+ players · it checks">
-        <FlopRule when="top pair+ / draw" hand="flush draw or open-ender" action="raise" size="60%" />
-        <FlopRule when="everything else" hand="" action="check" />
-      </FlopSection>
-      <FlopSection title="Heads-up · fish / SLP · it checks">
-        <FlopRule when="monster" hand="calling station" action="raise" size="150%" />
-        <FlopRule when="top pair+" hand="" action="raise" size="100%" />
-        <FlopRule when="everything else" hand="" action="check" />
-      </FlopSection>
-      <FlopSection title="Heads-up · regular · it checks">
-        <FlopRule when="good hand" hand="" action="raise" size="75%" />
-        <FlopRule when="strong draw" hand="flush draw or open-ender" action="raise" size="60%" />
-        <FlopRule when="dry A/K miss" hand="two low cards · no flush draw" action="raise" size="55%" />
-        <FlopRule when="everything else" hand="" action="check" />
-      </FlopSection>
-      <FlopSection title="They bet first">
-        <FlopRule when="tiny bet" hand="use the matching row above" action="check" />
-        <FlopRule when="normal bet" hand="made hand / real draw" action="call" />
-        <FlopRule when="normal bet" hand="everything else" action="fold" />
-      </FlopSection>
-    </Card>
-  );
-}
-
-function CbetResponseMap() {
-  return (
-    <Card title="After your c-bet" Icon={CircleDot}>
-      <PathRow number="01" when="They make a real raise" action="fold" then="Fold, including one-pair hands. NL2 raises are value-heavy." />
-      <PathRow number="02" when="They min-raise" action="call" then="Only in position with middle pair or top pair. Air folds." />
-      <PathRow number="03" when="They call · fold-to-c-bet 70%+" action="fold" then="Their call is strong: top pair or a big draw. Stop bluffing." />
-      <PathRow number="04" when="They call · fold-to-c-bet 59% or less" action="raise" then="They are sticky. Keep value betting; their call alone says little." />
+      <ActionSheetSection title="3+ players · it checks">
+        <ActionSheetRule when="top pair+ / draw" hand="flush draw or open-ender" action="raise" size="60%" />
+        <ActionSheetRule when="everything else" hand="" action="check" />
+      </ActionSheetSection>
+      <ActionSheetSection title="Heads-up · fish / SLP · it checks">
+        <ActionSheetRule when="monster" hand="calling station" action="raise" size="150%" />
+        <ActionSheetRule when="top pair+" hand="" action="raise" size="100%" />
+        <ActionSheetRule when="everything else" hand="" action="check" />
+      </ActionSheetSection>
+      <ActionSheetSection title="Heads-up · regular · it checks">
+        <ActionSheetRule when="good hand" hand="" action="raise" size="75%" />
+        <ActionSheetRule when="strong draw" hand="flush draw or open-ender" action="raise" size="60%" />
+        <ActionSheetRule when="dry A/K miss" hand="two low cards · no flush draw" action="raise" size="55%" />
+        <ActionSheetRule when="everything else" hand="" action="check" />
+      </ActionSheetSection>
+      <ActionSheetSection title="They bet first">
+        <ActionSheetRule when="tiny bet" hand="matching row above" action="check" label="Use sheet" />
+        <ActionSheetRule when="normal bet" hand="made hand / real draw" action="call" />
+        <ActionSheetRule when="normal bet" hand="everything else" action="fold" />
+      </ActionSheetSection>
+      <ActionSheetSection title="After your c-bet">
+        <ActionSheetRule when="real raise" hand="any one-pair hand" action="fold" />
+        <ActionSheetRule when="min-raise · IP" hand="middle pair / top pair" action="call" />
+        <ActionSheetRule when="they call · F2C 70%+" hand="" action="check" label="Stop bluffing" />
+        <ActionSheetRule when="they call · F2C 59%−" hand="good hand" action="raise" label="Value bet" size="75%" />
+      </ActionSheetSection>
     </Card>
   );
 }
 
 function TurnMap() {
   return (
-    <Card title="Turn · action order" Icon={ArrowRight}>
-      <PathRow number="01" when="No top pair, overpair or good draw" action="fold" then="Stop investing. A tiny bet is the only reason to continue." />
-      <PathRow number="02" when="Top pair / small overpair vs fish or SLP" action="raise" then="Bet 75% pot for value." />
-      <PathRow number="03" when="Top pair / small overpair vs TAG" action="check" then="Check or check-fold. Keep the pot controlled." />
-      <PathRow number="04" when="Two pair or better" action="raise" then="Bet 75%+ against everyone." />
-      <PathRow number="05" when="They raise or lead big" action="fold" then="If your hand cannot beat two pair, fold by default." />
+    <Card title="Turn" Icon={ArrowRight}>
+      <ActionSheetSection title="It checks">
+        <ActionSheetRule when="top pair / small overpair" hand="fish / SLP" action="raise" size="75%" />
+        <ActionSheetRule when="top pair / small overpair" hand="TAG" action="check" />
+        <ActionSheetRule when="two pair+" hand="" action="raise" size="75%+" />
+        <ActionSheetRule when="everything else" hand="" action="check" />
+      </ActionSheetSection>
+      <ActionSheetSection title="They bet / raise">
+        <ActionSheetRule when="cannot beat two pair" hand="big lead / raise" action="fold" />
+        <ActionSheetRule when="no top pair / overpair / draw" hand="normal bet" action="fold" />
+      </ActionSheetSection>
     </Card>
   );
 }
 
 function RiverMap() {
   return (
-    <Card title="River · action order" Icon={ArrowRight}>
-      <PathRow number="01" when="No pair" action="fold" then="Give up. Exception: fish bets 1/4 pot, draws miss, AJ-high+ can call." />
-      <PathRow number="02" when="Top pair" action="raise" then="Bet about 2/3 pot. Bet bigger against fish / SLP." />
-      <PathRow number="03" when="Middle pair" action="raise" then="Value bet fish / SLP. Check against TAG unless your kicker is great." />
-      <PathRow number="04" when="Facing a normal river bet" action="call" then="AF 1: fold. AF 2+: call only on a safe card. Pot-size or overbet: fold." />
-      <PathRow number="05" when="They raise your bet 3×+" action="fold" then="Fold. A fish min-raising a small pot is the named exception." />
+    <Card title="River" Icon={ArrowRight}>
+      <ActionSheetSection title="It checks">
+        <ActionSheetRule when="top pair" hand="" action="raise" size="67%" />
+        <ActionSheetRule when="top pair" hand="fish / SLP" action="raise" size="75%+" />
+        <ActionSheetRule when="middle pair" hand="fish / SLP" action="raise" label="Value bet" />
+        <ActionSheetRule when="middle pair" hand="TAG" action="check" />
+        <ActionSheetRule when="no pair" hand="" action="check" />
+      </ActionSheetSection>
+      <ActionSheetSection title="They bet / raise">
+        <ActionSheetRule when="AJ-high+" hand="fish · 25% · draws miss" action="call" />
+        <ActionSheetRule when="AF 1" hand="normal bet" action="fold" />
+        <ActionSheetRule when="AF 2+" hand="safe card · under pot" action="call" />
+        <ActionSheetRule when="pot / overbet" hand="" action="fold" />
+        <ActionSheetRule when="they raise 3×+" hand="" action="fold" />
+      </ActionSheetSection>
     </Card>
   );
 }
@@ -485,7 +473,6 @@ function visualFor(entry: PlaybookEntry): React.ReactNode {
   if (entry.id === "vs-3bet") return <ThreeBetMap />;
   if (entry.id === "vs-4bet") return <FourBetMap />;
   if (entry.id === "flop") return <FlopMap />;
-  if (entry.id === "cbet-response") return <CbetResponseMap />;
   if (entry.id === "turn") return <TurnMap />;
   if (entry.id === "river") return <RiverMap />;
   return <Fallback entry={entry} />;
@@ -500,7 +487,7 @@ export function StrategyPlaybook({ entries }: { entries: readonly PlaybookEntry[
   const preflopIds = new Set(["hud", "ranges", "sizing", "facing-open", "squeeze", "vs-3bet", "vs-4bet"]);
   const groups = {
     preflop: entries.filter((entry) => preflopIds.has(entry.id)),
-    flop: entries.filter((entry) => entry.id === "flop" || entry.id === "cbet-response"),
+    flop: entries.filter((entry) => entry.id === "flop"),
     turn: entries.filter((entry) => entry.id === "turn"),
     river: entries.filter((entry) => entry.id === "river"),
   };

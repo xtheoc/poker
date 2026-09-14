@@ -21,7 +21,6 @@ describe("Crushing the Microstakes NL2 strategy", () => {
       "three-bet-tree",
       "four-bet-tree",
       "flop-plan",
-      "after-the-cbet",
       "turn-discipline",
       "river-extraction",
     ]);
